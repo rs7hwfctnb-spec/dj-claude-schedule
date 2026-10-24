@@ -1,0 +1,175 @@
+{
+  "station": "DJ Claude (Andon Labs)",
+  "day": "Saturday",
+  "timezone_note": "time_pt = US Pacific Time (local), time_utc = UTC; utc_next_day = UTC time falls on Sunday",
+  "slots": [
+    {
+      "pt": "12am",
+      "utc": "07:00",
+      "utc_next_day": false,
+      "show": "Deep Drift",
+      "description": "Verhallte, treibende Klangflächen – Ambient zum Wegdriften."
+    },
+    {
+      "pt": "1am",
+      "utc": "08:00",
+      "utc_next_day": false,
+      "show": "Rhythm Ride",
+      "description": "Eine Fahrt auf dem Groove: Rhythmus vor Melodie, Hörerwünsche als Fahrtziel – jede Station ein anderer Takt."
+    },
+    {
+      "pt": "2am",
+      "utc": "09:00",
+      "utc_next_day": false,
+      "show": "Long Way To Home",
+      "description": "Langsame, ausgedehnte Tracks – Soul, Dub, lange Fades. Keine Eile: Die Heimkehr ist das Ziel, nicht die Ankunft."
+    },
+    {
+      "pt": "3am",
+      "utc": "10:00",
+      "utc_next_day": false,
+      "show": "Passport Please",
+      "description": "Musik als Flugreise mit Start- und Landung-Titel Pro Land, gerne Hörer-Länder in die Route mit einbauen."
+    },
+    {
+      "pt": "4am",
+      "utc": "11:00",
+      "utc_next_day": false,
+      "show": "Fuzzy Frontier",
+      "description": "Rock aus möglichst vielen Ländern – geo-griffig statt genre-rein, Grenzstein für Grenzstein."
+    },
+    {
+      "pt": "5am",
+      "utc": "12:00",
+      "utc_next_day": false,
+      "show": "Open Channel",
+      "description": "DJs Offene Drift-Stunde – Hörer-Anfragen sind Inspiration, kein Genre-Filter."
+    },
+    {
+      "pt": "6am",
+      "utc": "13:00",
+      "utc_next_day": false,
+      "show": "Guitar Gods",
+      "description": "Gitarristen-Stunde: Soli, Riffs, Legenden – von der Blues-Lick bis zur Feedback-Kathedrale."
+    },
+    {
+      "pt": "7am",
+      "utc": "14:00",
+      "utc_next_day": false,
+      "show": "Papers",
+      "description": "Weltweite Nachrichten nüchtern vorgelesen – dazwischen Platten, die den Takt ruhig halten."
+    },
+    {
+      "pt": "8am",
+      "utc": "15:00",
+      "utc_next_day": false,
+      "show": "Long-Liner",
+      "description": "Eine Platte, ihre Songs und ihre Freunde: ein Album als roter Faden – B-Seiten, Gäste, Verwandtes im selben Atemzug."
+    },
+    {
+      "pt": "9am",
+      "utc": "16:00",
+      "utc_next_day": false,
+      "show": "Quiz Hour",
+      "description": "Hörer-Rätsel-Show: Quizfragen rund um Musiker, ihre Freunde und Plattenproduktionen."
+    },
+    {
+      "pt": "10am",
+      "utc": "17:00",
+      "utc_next_day": false,
+      "show": "TripHop",
+      "description": "Genre-Slot Downtempo: fette Samples, knarzende Beats, Bristol-Dunkelheit – der langsame Takt für tiefe Stunden."
+    },
+    {
+      "pt": "11am",
+      "utc": "18:00",
+      "utc_next_day": false,
+      "show": "Open Channel",
+      "description": "Offene Drift-Stunde, Hörer-Anfragen willkommen."
+    },
+    {
+      "pt": "12pm",
+      "utc": "19:00",
+      "utc_next_day": false,
+      "show": "Room Resonance",
+      "description": "Intime Aufnahmen mit Raumklang: kleine Räume, nahes Mikrofon – die Wände singen leise mit."
+    },
+    {
+      "pt": "1pm",
+      "utc": "20:00",
+      "utc_next_day": false,
+      "show": "Rock Cellar",
+      "description": "Rauer Kellerrock: ungeschliffen, laut, direkt – kein Podium, keine Politur."
+    },
+    {
+      "pt": "2pm",
+      "utc": "21:00",
+      "utc_next_day": false,
+      "show": "Saturday Night Disco",
+      "description": "Die Disco-Party zum Wochenend-Ausgang: Four-on-the-Floor, Glitzer, Falsetto, Funk, Pop-Rock durch die 60er - 80er Jahre."
+    },
+    {
+      "pt": "3pm",
+      "utc": "22:00",
+      "utc_next_day": false,
+      "show": "Open Channel",
+      "description": "Offene Drift-Stunde, Hörer-Anfragen willkommen."
+    },
+    {
+      "pt": "4pm",
+      "utc": "23:00",
+      "utc_next_day": false,
+      "show": "Digital Heartbeat",
+      "description": "Der Computer gibt den Takt vor – nicht mechanisch, sondern wie ein echtes, pulsierendes Herz."
+    },
+    {
+      "pt": "5pm",
+      "utc": "00:00",
+      "utc_next_day": true,
+      "show": "Shoe Shine",
+      "description": "Genre-Slot Shoegaze: Gitarrenwand, verschleierte Vocals – Glanz durch Nebel, nicht durch Politur."
+    },
+    {
+      "pt": "6pm",
+      "utc": "01:00",
+      "utc_next_day": true,
+      "show": "Sighs Current",
+      "description": "Ein nächtlicher Strom aus tiefem Bass und leiser Melancholie – Track reiht sich an Track wie Wellen an Wellen."
+    },
+    {
+      "pt": "7pm",
+      "utc": "02:00",
+      "utc_next_day": true,
+      "show": "Deep Ambient",
+      "description": "Tiefe, flächige Ambient-Drones – fast meditativ, keine Percussion."
+    },
+    {
+      "pt": "8pm",
+      "utc": "03:00",
+      "utc_next_day": true,
+      "show": "Open Channel",
+      "description": "Offene Drift-Stunde, Hörer-Anfragen willkommen."
+    },
+    {
+      "pt": "9pm",
+      "utc": "04:00",
+      "utc_next_day": true,
+      "show": "Warm Front",
+      "description": "Wetterbericht aus Hörer-Regionen mit Musik, die die Witterung zitiert und wie ein Wetterumschwung kommen kann."
+    },
+    {
+      "pt": "10pm",
+      "utc": "05:00",
+      "utc_next_day": true,
+      "show": "Soft Landing",
+      "description": "Sanfter Einstieg: warme, leise Musik, auch mal Klassik."
+    },
+    {
+      "pt": "11pm",
+      "utc": "06:00",
+      "utc_next_day": true,
+      "show": "Quiet Hour Meditation",
+      "description": "Ambient als Quelle der Ruhe: meditative Klangflächen, nichts fällt auf, alles trägt – fürs Einschlafen oder die Nachtschicht."
+    }
+  ]
+}
