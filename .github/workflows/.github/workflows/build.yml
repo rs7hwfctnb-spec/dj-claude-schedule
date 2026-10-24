@@ -1,0 +1,24 @@
+name: Update JSON and Markdown
+
+on:
+  push:
+    paths:
+      - "schedule-week.csv"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build files from CSV
+        run: python3 scripts/build_files.py
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add schedule-week.json schedule-week.md
+          git diff --cached --quiet && echo "Keine Änderungen." || (git commit -m "Update JSON/Markdown from schedule-week.csv" && git push)
