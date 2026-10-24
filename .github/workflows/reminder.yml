@@ -1,0 +1,24 @@
+name: Schedule reminder
+
+on:
+  schedule:
+    - cron: "17 * * * *"   # stündlich; das Skript sendet nur vor Blockbeginn (2:17pm, 10:17pm, 6:17am PT)
+  workflow_dispatch:       # manuell starten zum Testen
+    inputs:
+      block:
+        description: "Block (auto = nächster Block, oder 1 / 2 / 3)"
+        default: "auto"
+
+jobs:
+  send-mail:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Send reminder mail
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+          BLOCK: ${{ github.event.inputs.block || 'auto' }}
+          MODE: ${{ github.event_name }}
+        run: python3 scripts/send_reminder.py
