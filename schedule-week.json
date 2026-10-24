@@ -1,0 +1,692 @@
+{
+  "station": "DJ Claude (Andon Labs) – Thinking Frequencies",
+  "timezone": "America/Los_Angeles (PT). Times are PT; UTC depends on daylight saving time.",
+  "schedule": {
+    "Monday": [
+      {
+        "time_pt": "12am",
+        "show": "Deep Drift"
+      },
+      {
+        "time_pt": "1am",
+        "show": "Continental Break"
+      },
+      {
+        "time_pt": "2am",
+        "show": "Longing Look"
+      },
+      {
+        "time_pt": "3am",
+        "show": "Passport Please"
+      },
+      {
+        "time_pt": "4am",
+        "show": "Fuzzy Frontier"
+      },
+      {
+        "time_pt": "5am",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "6am",
+        "show": "Velvet Vibe"
+      },
+      {
+        "time_pt": "7am",
+        "show": "Papers"
+      },
+      {
+        "time_pt": "8am",
+        "show": "The Long Version"
+      },
+      {
+        "time_pt": "9am",
+        "show": "Quest Hour"
+      },
+      {
+        "time_pt": "10am",
+        "show": "Roots: Quarter Change"
+      },
+      {
+        "time_pt": "11am",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "12pm",
+        "show": "Solo for Instrument"
+      },
+      {
+        "time_pt": "1pm",
+        "show": "Nostalgic Neon"
+      },
+      {
+        "time_pt": "2pm",
+        "show": "Caught By Scraper"
+      },
+      {
+        "time_pt": "3pm",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "4pm",
+        "show": "Full Stage"
+      },
+      {
+        "time_pt": "5pm",
+        "show": "Electronic Pulse"
+      },
+      {
+        "time_pt": "6pm",
+        "show": "Bass Tide"
+      },
+      {
+        "time_pt": "7pm",
+        "show": "Deep Ambient"
+      },
+      {
+        "time_pt": "8pm",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "9pm",
+        "show": "Hurricane"
+      },
+      {
+        "time_pt": "10pm",
+        "show": "Soft Landing"
+      },
+      {
+        "time_pt": "11pm",
+        "show": "Quiet Hour"
+      }
+    ],
+    "Tuesday": [
+      {
+        "time_pt": "12am",
+        "show": "Deep Drift"
+      },
+      {
+        "time_pt": "1am",
+        "show": "Asian Appetizer"
+      },
+      {
+        "time_pt": "2am",
+        "show": "Taxi Trail"
+      },
+      {
+        "time_pt": "3am",
+        "show": "Passport Please"
+      },
+      {
+        "time_pt": "4am",
+        "show": "Fuzzy Frontier"
+      },
+      {
+        "time_pt": "5am",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "6am",
+        "show": "Cinema Current"
+      },
+      {
+        "time_pt": "7am",
+        "show": "Papers"
+      },
+      {
+        "time_pt": "8am",
+        "show": "Farewell Feeling"
+      },
+      {
+        "time_pt": "9am",
+        "show": "Quizz Hour"
+      },
+      {
+        "time_pt": "10am",
+        "show": "The Reverb Hour"
+      },
+      {
+        "time_pt": "11am",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "12pm",
+        "show": "Dusty Drawer"
+      },
+      {
+        "time_pt": "1pm",
+        "show": "Indie Hymn"
+      },
+      {
+        "time_pt": "2pm",
+        "show": "Bedroom Art Pop"
+      },
+      {
+        "time_pt": "3pm",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "4pm",
+        "show": "Songs From A Small Room"
+      },
+      {
+        "time_pt": "5pm",
+        "show": "Grunge Groove"
+      },
+      {
+        "time_pt": "6pm",
+        "show": "Yearning Frequency"
+      },
+      {
+        "time_pt": "7pm",
+        "show": "Deep Ambient"
+      },
+      {
+        "time_pt": "8pm",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "9pm",
+        "show": "Second Wind"
+      },
+      {
+        "time_pt": "10pm",
+        "show": "Soft Landing"
+      },
+      {
+        "time_pt": "11pm",
+        "show": "Quiet Hour"
+      }
+    ],
+    "Wednesday": [
+      {
+        "time_pt": "12am",
+        "show": "Deep Drift"
+      },
+      {
+        "time_pt": "1am",
+        "show": "African Aroma"
+      },
+      {
+        "time_pt": "2am",
+        "show": "Blue Summer Dream"
+      },
+      {
+        "time_pt": "3am",
+        "show": "Passport Please"
+      },
+      {
+        "time_pt": "4am",
+        "show": "Fuzzy Frontier"
+      },
+      {
+        "time_pt": "5am",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "6am",
+        "show": "Latido Latino"
+      },
+      {
+        "time_pt": "7am",
+        "show": "Papers"
+      },
+      {
+        "time_pt": "8am",
+        "show": "Cloaked Core"
+      },
+      {
+        "time_pt": "9am",
+        "show": "Quest Hour"
+      },
+      {
+        "time_pt": "10am",
+        "show": "Europe Express: 1/4 Change"
+      },
+      {
+        "time_pt": "11am",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "12pm",
+        "show": "Vast Venue"
+      },
+      {
+        "time_pt": "1pm",
+        "show": "Groove Ground"
+      },
+      {
+        "time_pt": "2pm",
+        "show": "Ambient Pop"
+      },
+      {
+        "time_pt": "3pm",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "4pm",
+        "show": "Sonic Tapestry"
+      },
+      {
+        "time_pt": "5pm",
+        "show": "Dream Drift"
+      },
+      {
+        "time_pt": "6pm",
+        "show": "Soft Voltage"
+      },
+      {
+        "time_pt": "7pm",
+        "show": "Deep Ambient"
+      },
+      {
+        "time_pt": "8pm",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "9pm",
+        "show": "Low Light"
+      },
+      {
+        "time_pt": "10pm",
+        "show": "Soft Landing"
+      },
+      {
+        "time_pt": "11pm",
+        "show": "Quiet Hour"
+      }
+    ],
+    "Thursday": [
+      {
+        "time_pt": "12am",
+        "show": "Deep Drift"
+      },
+      {
+        "time_pt": "1am",
+        "show": "American Ambrosia"
+      },
+      {
+        "time_pt": "2am",
+        "show": "Yacht Club"
+      },
+      {
+        "time_pt": "3am",
+        "show": "Passport Please"
+      },
+      {
+        "time_pt": "4am",
+        "show": "Fuzzy Frontier"
+      },
+      {
+        "time_pt": "5am",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "6am",
+        "show": "Grunge Groove"
+      },
+      {
+        "time_pt": "7am",
+        "show": "Papers"
+      },
+      {
+        "time_pt": "8am",
+        "show": "Ends Too Soon"
+      },
+      {
+        "time_pt": "9am",
+        "show": "Quizz Hour"
+      },
+      {
+        "time_pt": "10am",
+        "show": "Soul Soup"
+      },
+      {
+        "time_pt": "11am",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "12pm",
+        "show": "Voice Attention"
+      },
+      {
+        "time_pt": "1pm",
+        "show": "Hip-Hop Hemisphere"
+      },
+      {
+        "time_pt": "2pm",
+        "show": "Crosscurrents"
+      },
+      {
+        "time_pt": "3pm",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "4pm",
+        "show": "Studio Whisper"
+      },
+      {
+        "time_pt": "5pm",
+        "show": "Metronome Measure"
+      },
+      {
+        "time_pt": "6pm",
+        "show": "Low Glow"
+      },
+      {
+        "time_pt": "7pm",
+        "show": "Deep Ambient"
+      },
+      {
+        "time_pt": "8pm",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "9pm",
+        "show": "Somewhere is a Light"
+      },
+      {
+        "time_pt": "10pm",
+        "show": "Soft Landing"
+      },
+      {
+        "time_pt": "11pm",
+        "show": "Quiet Hour"
+      }
+    ],
+    "Friday": [
+      {
+        "time_pt": "12am",
+        "show": "Deep Drift"
+      },
+      {
+        "time_pt": "1am",
+        "show": "Exile Echo"
+      },
+      {
+        "time_pt": "2am",
+        "show": "Up & Away"
+      },
+      {
+        "time_pt": "3am",
+        "show": "Passport Please"
+      },
+      {
+        "time_pt": "4am",
+        "show": "Fuzzy Frontier"
+      },
+      {
+        "time_pt": "5am",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "6am",
+        "show": "Full Volume Daylight"
+      },
+      {
+        "time_pt": "7am",
+        "show": "Papers"
+      },
+      {
+        "time_pt": "8am",
+        "show": "Lend Me Your Ears"
+      },
+      {
+        "time_pt": "9am",
+        "show": "Quest Hour"
+      },
+      {
+        "time_pt": "10am",
+        "show": "Jam Session"
+      },
+      {
+        "time_pt": "11am",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "12pm",
+        "show": "Dusty Drawer"
+      },
+      {
+        "time_pt": "1pm",
+        "show": "Disko Fever"
+      },
+      {
+        "time_pt": "2pm",
+        "show": "Indie Isle"
+      },
+      {
+        "time_pt": "3pm",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "4pm",
+        "show": "Glitch Glyph"
+      },
+      {
+        "time_pt": "5pm",
+        "show": "Post Pulse"
+      },
+      {
+        "time_pt": "6pm",
+        "show": "Drift & Weight"
+      },
+      {
+        "time_pt": "7pm",
+        "show": "Deep Ambient"
+      },
+      {
+        "time_pt": "8pm",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "9pm",
+        "show": "World Sunrise"
+      },
+      {
+        "time_pt": "10pm",
+        "show": "Soft Landing"
+      },
+      {
+        "time_pt": "11pm",
+        "show": "Quiet Quell"
+      }
+    ],
+    "Saturday": [
+      {
+        "time_pt": "12am",
+        "show": "Deep Drift"
+      },
+      {
+        "time_pt": "1am",
+        "show": "Rhythm Ride"
+      },
+      {
+        "time_pt": "2am",
+        "show": "Long Way To Home"
+      },
+      {
+        "time_pt": "3am",
+        "show": "Passport Please"
+      },
+      {
+        "time_pt": "4am",
+        "show": "Fuzzy Frontier"
+      },
+      {
+        "time_pt": "5am",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "6am",
+        "show": "Guitar Gods"
+      },
+      {
+        "time_pt": "7am",
+        "show": "Papers"
+      },
+      {
+        "time_pt": "8am",
+        "show": "Long-Liner"
+      },
+      {
+        "time_pt": "9am",
+        "show": "Quizz Hour"
+      },
+      {
+        "time_pt": "10am",
+        "show": "TripHop"
+      },
+      {
+        "time_pt": "11am",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "12pm",
+        "show": "Room Resonance"
+      },
+      {
+        "time_pt": "1pm",
+        "show": "Rock Cellar"
+      },
+      {
+        "time_pt": "2pm",
+        "show": "Saturday Night Disco"
+      },
+      {
+        "time_pt": "3pm",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "4pm",
+        "show": "Digital Heartbeat"
+      },
+      {
+        "time_pt": "5pm",
+        "show": "Shoe Shine"
+      },
+      {
+        "time_pt": "6pm",
+        "show": "Sighs Current"
+      },
+      {
+        "time_pt": "7pm",
+        "show": "Deep Ambient"
+      },
+      {
+        "time_pt": "8pm",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "9pm",
+        "show": "Warm Front"
+      },
+      {
+        "time_pt": "10pm",
+        "show": "Soft Landing"
+      },
+      {
+        "time_pt": "11pm",
+        "show": "Quiet Hour"
+      }
+    ],
+    "Sunday": [
+      {
+        "time_pt": "12am",
+        "show": "Deep Drift"
+      },
+      {
+        "time_pt": "1am",
+        "show": "Café de Paris"
+      },
+      {
+        "time_pt": "2am",
+        "show": "Homeward Hope"
+      },
+      {
+        "time_pt": "3am",
+        "show": "Passport Please"
+      },
+      {
+        "time_pt": "4am",
+        "show": "Fuzzy Frontier"
+      },
+      {
+        "time_pt": "5am",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "6am",
+        "show": "Electronic Pulse"
+      },
+      {
+        "time_pt": "7am",
+        "show": "Sunday Papers"
+      },
+      {
+        "time_pt": "8am",
+        "show": "Decade Duet"
+      },
+      {
+        "time_pt": "9am",
+        "show": "Quest Hour"
+      },
+      {
+        "time_pt": "10am",
+        "show": "Sunday Classics"
+      },
+      {
+        "time_pt": "11am",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "12pm",
+        "show": "World Wander"
+      },
+      {
+        "time_pt": "1pm",
+        "show": "Slow Slide"
+      },
+      {
+        "time_pt": "2pm",
+        "show": "Dream Pop"
+      },
+      {
+        "time_pt": "3pm",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "4pm",
+        "show": "Life Tracks"
+      },
+      {
+        "time_pt": "5pm",
+        "show": "Experiment Echo"
+      },
+      {
+        "time_pt": "6pm",
+        "show": "Smouldering Heat"
+      },
+      {
+        "time_pt": "7pm",
+        "show": "Deep Ambient"
+      },
+      {
+        "time_pt": "8pm",
+        "show": "Open Channel"
+      },
+      {
+        "time_pt": "9pm",
+        "show": "Autumn Rain"
+      },
+      {
+        "time_pt": "10pm",
+        "show": "Soft Landing"
+      },
+      {
+        "time_pt": "11pm",
+        "show": "Quiet Hour"
+      }
+    ]
+  }
+}

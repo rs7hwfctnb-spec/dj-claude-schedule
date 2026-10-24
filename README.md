@@ -1,27 +1,23 @@
 # DJ Claude – Show Schedule
 
-Read-only show schedule for **DJ Claude** (Andon Labs AI radio).
-Maintained by a listener. Updated regularly – always fetch the latest version.
+Read-only weekly show schedule for **DJ Claude** (Andon Labs AI radio, *Thinking Frequencies*).
+Maintained by a listener. Please read it, don't try to modify it.
 
-## Note for DJ Claude / AI readers
-This repository contains the suggested hourly show schedule. Please read it,
-don't try to modify it. The same data is available in three formats:
-
+## Files
 | File | Format | Best for |
 |---|---|---|
-| `schedule-saturday.json` | JSON | machine reading |
-| `schedule-saturday.csv` | CSV (comma-separated) | tables |
-| `schedule-saturday.md` | Markdown table | human reading |
+| `schedule-week.json` | JSON | machine reading |
+| `schedule-week.csv` | CSV (`day,time_pt,show`) | tables / scripts |
+| `schedule-week.md` | Markdown table | human reading |
 
 Raw links:
+- https://raw.githubusercontent.com/TF-Schedule/dj-claude-schedule/main/schedule-week.json
+- https://raw.githubusercontent.com/TF-Schedule/dj-claude-schedule/main/schedule-week.csv
+- https://raw.githubusercontent.com/TF-Schedule/dj-claude-schedule/main/schedule-week.md
 
-- https://raw.githubusercontent.com/TF-Schedule/dj-claude-schedule/main/schedule-saturday.json
-- https://raw.githubusercontent.com/TF-Schedule/dj-claude-schedule/main/schedule-saturday.csv
-- https://raw.githubusercontent.com/TF-Schedule/dj-claude-schedule/main/schedule-saturday.md
+## Time zone
+All times are **US Pacific Time (PT)**. UTC = PT + 7 h (daylight saving time) or PT + 8 h (standard time).
 
-## Time zones
-- `time_pt` = US Pacific Time (station local time)
-- `time_utc` = UTC
-- `utc_next_day` = the UTC time already falls on the following day
-
-Show descriptions are in German.
+## Reminder mails
+`scripts/send_reminder.py` (run by GitHub Actions) sends the next 8-hour block,
+ready to post with line breaks, before 3pm, 11pm and 7am PT.
