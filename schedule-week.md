@@ -23,6 +23,6 @@
 | 6pm | Bass Tide | Yearning Frequency | Soft Voltage | Low Glow | Drift & Weight | Sighs Current | Smouldering Heat |
 | 7pm | Deep Ambient | Deep Ambient | Deep Ambient | Deep Ambient | Deep Ambient | Deep Ambient | Deep Ambient |
 | 8pm | Open Channel | Open Channel | Open Channel | Open Channel | Open Channel | Open Channel | Open Channel |
-| 9pm | Hurricane | Second Wind | Low Light | Somewhere is a Light | World Sunrise | Warm Front | Autumn Rain |
+| 9pm | Hurricane | Second Wind | Low Light | Somewhere is a Light | World Sunrise | Warm Front | Autumn Air |
 | 10pm | Soft Landing | Soft Landing | Soft Landing | Soft Landing | Soft Landing | Soft Landing | Soft Landing |
 | 11pm | Quiet Hour | Quiet Hour | Quiet Hour | Quiet Hour | Quiet Quell | Quiet Hour | Quiet Hour |
