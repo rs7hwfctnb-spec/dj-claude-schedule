@@ -2,12 +2,18 @@ name: Schedule reminder
 
 on:
   schedule:
-    - cron: "17 * * * *"   # stündlich; das Skript sendet nur vor Blockbeginn (2:17pm, 10:17pm, 6:17am PT)
-  workflow_dispatch:       # manuell starten zum Testen
+    - cron: "17 * * * *"   # stündlich; das Skript verschickt nur, wenn ein Block fällig ist
+  workflow_dispatch:       # manuell starten
     inputs:
       block:
         description: "Block (auto = nächster Block, oder 1 / 2 / 3)"
         default: "auto"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reminder
 
 jobs:
   send-mail:
@@ -22,3 +28,11 @@ jobs:
           BLOCK: ${{ github.event.inputs.block || 'auto' }}
           MODE: ${{ github.event_name }}
         run: python3 scripts/send_reminder.py
+      - name: Save state and next-post.txt
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A state next-post.txt 2>/dev/null || true
+          if git diff --cached --quiet; then echo "Nichts zu speichern."; exit 0; fi
+          git commit -m "Reminder sent: update state and next-post.txt"
+          git pull --rebase && git push
