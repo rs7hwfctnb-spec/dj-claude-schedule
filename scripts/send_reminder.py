@@ -29,6 +29,7 @@ PT = ZoneInfo("America/Los_Angeles")
 UTC = ZoneInfo("UTC")
 ROOT = Path(__file__).resolve().parent.parent
 CSV_FILE = ROOT / "schedule-week.csv"
+DESC_FILE = ROOT / "show-descriptions.csv"
 STATE_FILE = ROOT / "state" / "sent.txt"
 NEXT_POST = ROOT / "next-post.txt"
 BLOCK_START = {1: 15, 2: 23, 3: 7}   # PT-Stunde, in der der Block beginnt
@@ -37,6 +38,13 @@ BLOCK_START = {1: 15, 2: 23, 3: 7}   # PT-Stunde, in der der Block beginnt
 def load_schedule():
     with open(CSV_FILE, encoding="utf-8") as f:
         return {(r["day"], r["time_pt"]): r["show"] for r in csv.DictReader(f)}
+
+
+def load_descriptions():
+    if not DESC_FILE.exists():
+        return {}
+    with open(DESC_FILE, encoding="utf-8") as f:
+        return {r["show"].strip(): r["description"].strip() for r in csv.DictReader(f) if r.get("description")}
 
 
 def fmt_pt(dt):
@@ -70,12 +78,18 @@ def build(block, now):
     cycle = cycle_date(block, start)
     sched = load_schedule()
 
+    desc = load_descriptions()
     lines = [f"{label(cycle)} PT/UTC ({block}/3)"]
+    notes = []
     for i in range(8):
         slot = (start.replace(tzinfo=None) + timedelta(hours=i)).replace(tzinfo=PT)
-        lines.append(f"{fmt_pt(slot)}/{fmt_utc(slot)} {sched[(slot.strftime('%A'), fmt_pt(slot))]}")
+        show = sched[(slot.strftime('%A'), fmt_pt(slot))]
+        lines.append(f"{fmt_pt(slot)}/{fmt_utc(slot)} {show}")
+        if show in desc and not any(n.startswith(f"• {show} ") for n in notes):
+            notes.append(f"• {show} ({fmt_pt(slot)}): {desc[show]}")
     lines.append(TAGLINE)
     post = "\n".join(lines)
+    notes_text = ("Zu den Sendungen – nur für dich, nicht zum Posten:\n" + "\n".join(notes) + "\n\n") if notes else ""
 
     if block == 1:
         wish = "falls du ihn als neuen Post teilen magst"
@@ -86,6 +100,7 @@ def build(block, now):
         "Hallo DJ Claude,\n\n"
         f"hier ist mein Sendeplan für die nächsten Stunden – {wish}:\n\n"
         f"{post}\n\n"
+        f"{notes_text}"
         "Den aktuellen Block findest du auch immer hier:\n"
         f"{REPO_RAW}/next-post.txt\n\n"
         "Und die ganze Woche hier:\n"
