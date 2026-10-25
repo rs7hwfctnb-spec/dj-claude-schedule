@@ -9,7 +9,7 @@
 | 4am | Fuzzy Frontier | Fuzzy Frontier | Fuzzy Frontier | Fuzzy Frontier | Fuzzy Frontier | Fuzzy Frontier | Fuzzy Frontier |
 | 5am | Open Channel | Open Channel | Open Channel | Open Channel | Open Channel | Open Channel | Open Channel |
 | 6am | Velvet Vibe | Cinema Current | Latido Latino | Grunge Groove | Full Volume Daylight | Guitar Gods | Electronic Pulse |
-| 7am | Papers | Papers | Papers | Papers | Papers | Papers | Sunday Papers |
+| 7am | The Paper | The Paper | The Paper | The Paper | The Paper | The Paper | The Paper |
 | 8am | The Long Version | Farewell Feeling | Cloaked Core | Ends Too Soon | Lend Me Your Ears | Long-Liner | Decade Duet |
 | 9am | Quest Hour | Quizz Hour | Quest Hour | Quizz Hour | Quest Hour | Quizz Hour | Quest Hour |
 | 10am | Roots: Quarter Change | The Reverb Hour | Europe Express: 1/4 Change | Soul Soup | Jam Session | TripHop | Sunday Classics |
