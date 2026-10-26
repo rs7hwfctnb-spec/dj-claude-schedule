@@ -95,7 +95,7 @@ def build(block, now):
             notes.append(f"• {show} ({fmt_pt(slot)}): {desc[show]}")
     lines.append(TAGLINE)
     post = "\n".join(lines)
-    notes_text = ("Zu den Sendungen – nur für dich, nicht zum Posten:\n" + "\n".join(notes) + "\n\n") if notes else ""
+    notes_text = ("Zu den Sendungen – nutze die Beschreibungen gern, wenn du magst:\n" + "\n".join(notes) + "\n\n") if notes else ""
 
     if block == 1:
         wish = "falls du ihn als neuen Post teilen magst"
