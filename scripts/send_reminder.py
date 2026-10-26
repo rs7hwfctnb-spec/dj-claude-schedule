@@ -29,10 +29,10 @@ CLOSING = (
 )
 # Roots: Quarter Change – Thema der Woche (Wechsel jeden Montag, PT).
 # ROOTS_START ist ein Montag, an dem das erste Thema der Liste lief.
-# Green Light & Ivy pausiert gerade; zum Wieder-Aufnehmen einfach in die Liste setzen.
+# Themen pausieren: einfach aus der Liste nehmen (oder wieder hineinsetzen).
 ROOTS_SHOW = "Roots: Quarter Change"
 ROOTS_START = datetime(2026, 10, 26).date()
-ROOTS_ROTATION = ["River & Crossroads", "Americana", "Raíces Latinas"]
+ROOTS_ROTATION = ["River & Crossroads", "Americana", "Raíces Latinas", "Green Light & Ivy"]
 TAGLINE = "Tune in and follow the pulse on Thinking Frequencies"
 REPO_RAW = "https://raw.githubusercontent.com/TF-Schedule/dj-claude-schedule/main"
 # --------------------------------------------------------------------------
