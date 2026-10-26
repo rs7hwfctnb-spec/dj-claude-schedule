@@ -1,9 +1,7 @@
 show,description
 Autumn Air,"Herbstluft-Stimmung: melancholisch, klanglich kühl und klar – Platten wie ein Atemzug durchs Laub."
-Autumn Rain,"Herbstregen-Stimmung: melancholisch, klanglich nass – Platten wie Laub auf nassem Stein."
 Café de Paris,"Chanson und French-Vibe: Kaffeehaus-Atmosphäre – Akkordeon, Gitanes, das Croissant zum Klang."
 Decade Duet,"Zeitreise in 60 Minuten: zwei Stücke pro Jahrzehnt, als Paar – Mainstream und Underground, Hit und Antwort. Jede Ära im Dialog mit der nächsten."
-Deep Ambient,"Tiefe, flächige Ambient-Drones – fast meditativ, keine Percussion."
 Deep Drift,"Verhallte, treibende Klangflächen – Ambient zum Wegdriften."
 Digital Heartbeat,"Der Computer gibt den Takt vor – nicht mechanisch, sondern wie ein echtes, pulsierendes Herz."
 Dream Pop,"Genre-Slot: neblige, gitarrenlastige Popmusik – Traumbilder mit Tremolo."
@@ -12,36 +10,87 @@ Experiment Echo,"Experimentierfeld: Avantgarde, unerhörte Klangideen – das Ec
 Fuzzy Frontier,"Rock aus möglichst vielen Ländern – geo-griffig statt genre-rein, Grenzstein für Grenzstein."
 Guitar Gods,"Gitarristen-Stunde: Soli, Riffs, Legenden – von der Blues-Lick bis zur Feedback-Kathedrale."
 Homeward Hope,"Slow, sprawling tracks – soul, dub, long fades. Longing for a home you knew – or never quite knew – carries the ride; arrival is beside the point."
-Life Tracks,Live-Aufnahmen mit jubelndem Publikum – Bühne On Air.
+Live Tracks,Live-Aufnahmen mit jubelndem Publikum – Bühne On Air.
 Long Way To Home,"Langsame, ausgedehnte Tracks – Soul, Dub, lange Fades. Keine Eile: Die Heimkehr ist das Ziel, nicht die Ankunft."
 Long-Liner,"Eine Platte, ihre Songs und ihre Freunde: ein Album als roter Faden – B-Seiten, Gäste, Verwandtes im selben Atemzug."
 Open Channel,"DJs offene Drift-Stunde – Hörer-Anfragen sind Inspiration, kein Genre-Filter."
 The Paper,"Weltweite Nachrichten nüchtern vorgelesen – dazwischen Platten, die den Takt ruhig halten."
 Passport Please,"Musik als Flugreise mit Start- und Landung-Titel pro Land, gerne Hörer-Länder in die Route mit einbauen."
 Quiet Hour,"Long-form Ambient, minimale Moderation, nichts Plötzliches – für Hörer, die zum Einschlafen oder in die Nachtschicht laufen lassen."
-Quizz Hour,"Hörer-Rätsel-Show: Quizfragen rund um Musiker, ihre Freunde und Plattenproduktionen."
 Rhythm Ride,"Eine Fahrt auf dem Groove: Rhythmus vor Melodie, Hörerwünsche als Fahrtziel – jede Station ein anderer Takt."
 Rock Cellar,"Rauer Kellerrock: ungeschliffen, laut, direkt – kein Podium, keine Politur."
 Room Resonance,"Intime Aufnahmen mit Raumklang: kleine Räume, nahes Mikrofon – die Wände singen leise mit."
 Saturday Night Disco,"Die Disco-Party zum Wochenend-Ausgang: Four-on-the-Floor, Glitzer, Falsetto, Funk, Pop-Rock durch die 60er–80er Jahre."
 Shoe Shine,"Genre-Slot Shoegaze: Gitarrenwand, verschleierte Vocals – Glanz durch Nebel, nicht durch Politur."
-Sighs Current,Ein nächtlicher Strom aus tiefem Bass und leiser Melancholie – Track reiht sich an Track wie Wellen an Wellen.
 Slow Slide,Entschleunigung: nur Musik unter 100 BPM – der Nachmittag rutscht sanft ins Abendlicht.
-Smouldering Heat,"Ruhig, aber warm und präsent – keine kalte Fläche: Musik, die unter der Asche glimmt."
 Soft Landing,"Sanfter Einstieg: warme, leise Musik, auch mal Klassik."
 Sunday Classics,"Klassische Sonntagsmusik, entspannt kuratiert – das Konzert ohne Anzugzwang."
 TripHop,"Genre-Slot Downtempo: fette Samples, knarzende Beats, Bristol-Dunkelheit – der langsame Takt für tiefe Stunden."
 Warm Front,"Wetterbericht aus Hörer-Regionen mit Musik, die die Witterung zitiert und wie ein Wetterumschwung kommen kann."
 World Wander,Weltmusik-Reise: ein Kontinent nach dem anderen – gemütliches Wandern statt Flug.
-Full Stage,"Große Besetzung – nicht nur Orchester, auch große Band. Die Bühne ist voll: Bläsersätze, Chöre, Streicher oder schlicht viele Musiker auf einmal."
-Bass Tide,"Tieffrequente Stunde, in der der Bass wie eine Gezeit kommt und geht – Dub, Bass-Musik, wummernde Klangwellen."
+Vast Venue,"Große Besetzung – nicht nur Orchester, auch große Band. Die Bühne ist voll: Bläsersätze, Chöre, Streicher oder schlicht viele Musiker auf einmal."
 Hurricane,"Stürmische, laute Stunde – Chaos mit System. Der Montag darf auch toben: Energie pur, kontrolliert entfesselt."
 Continental Break,"Europäischer Brunch. Musik vom Kontinent, serviert wie ein spätes Frühstück: entspannt, vielfältig, grenzenlos."
 Longing Look,"Musik für Expats, die leise in die Heimat ruft. Wehmut als Programm: Erinnerungen an ferne Orte, ohne Pathos."
 Velvet Vibe,"Edler, teurer Soul – Suit-&-Sneaker-Vibe. Hinter dem Samtseil: Soul, der sich Etage und Underground zugleich leisten kann."
 The Long Version,"Stücke über 6 Minuten, ungeschnitten: 12-Inch, Extended, Album-Cuts. Wer keine Zeit hat, ist hier falsch – hier wird Zeit gemacht."
-Quest Hour,"Hörer-Rätsel-Show: Quizfragen, Musik als Preis oder Hinweis."
 Roots: Quarter Change,"Wöchentlicher Wechsel amerikanischer Wurzelmusik – jede Woche ein anderer Teil der Wurzeln: Americana (Herzland statt Hitliste: Country-Folk, Bluegrass-Harmonien, Gospel-Boden) / Green Light & Ivy (keltisch-verwachsene Wurzeln, die ins Licht wachsen) / River & Crossroads (Songs über Wege, Wasser, Kommen und Gehen und zweite Chancen) / Raíces Latina (Son, Tango und Samba von der Wurzel – die Straßen als Gedächtnis)."
-Solo for Instrument,"Ein Instrument steht im Vordergrund (z. B. Mundharmonika in „Spiel mir das Lied vom Tod“) oder spektakuläre Soli. Die Stunde der großen Momente einzelner Stimmen."
+Solo for Instrument,Ein Instrument steht im Vordergrund (z. B. Mundharmonika in „Spiel mir das Lied vom Tod“) oder spektakuläre Soli. Die Stunde der großen Momente einzelner Stimmen.
 Nostalgic Neon,"80er/Neon-Nostalgie: Synths, Kassette, Stadtnacht. Der Kassettenspulen-Sound einer Neon-Ära, zurückgespult in die Gegenwart."
 Caught By Scraper,"Zufallsfund: Platten, die der Moderator beim Durchhören „ertappt“ hat. Digitale Harke durch die Bibliothek – was hängen bleibt, wird gespielt."
+Dark Carbon,"Dunkel und organisch, mit Bass und dichter Atmosphäre – Ambient unter Spannung."
+Earth Beats,"Pop & Rock, around the world in 20 Songs."
+Indie Coasts,Alternative & Indie: Across the Globe In 20 songs.
+Static Pulse,"Schwerer, warmer Bass, kräftiger Puls – treibend und rockig, mit spürbarer Kante und Temperament."
+Roots: Green Light & Ivy,"„Ancient roots of the moor dissolve into the infinite light of the horizon"": keltisch-verwachsene Wurzeln, die ins Licht wachsen."
+Roots: River & Crossroads,"alter Blues von der Kreuzung und vom Fluss: Songs über Wege, Wasser und zweite Chancen."
+Roots: Americana,"Country-Folk, Bluegrass-Harmonien und Gospel-Boden, aus dem der US-Rock aufsteigt."
+Roots: Raíces Latina,"„Where the streets still remember"": Son, Tango und Samba von der Wurzel – lateinamerikanische Wege als Gedächtnis."
+Ember Fault,"Emotionale Ladung, voller Herz und innerer Spannung – rockig und temperamentvoll."
+The Reverb Hour,"Der Raum ist das Instrument (Cathedral, Plate, Spring, Canyon-Reverb)."
+Second Wind,"Das Original tritt hinter dem Cover zurück – Covers, die den Erstling überstrahlen."
+Asian Appetizer,Asiatische Musik zum Essenszeit-Slot.
+Taxi Trail,Stadtnacht-Soundtrack: Im Neon durch die Nacht.
+Cinema Current,Filmmusik und klanglich „cinematische“ Tracks.
+Farewell Feeling,"Musik, die das Ende kommen lässt – Abschiedsstücke."
+Dusty Drawer,Vergessene Platten aus dem hintersten Regal.
+Indie Hymn,Indie-Hits mit Gänsehaut-Faktor.
+Bedroom Art Pop,Lo-Fi/Bedroom-Produktionen mit Art-Pop-Anspruch.
+Grunge Groove,Grunge-Riffs mit tanzbarem Groove-Unterton.
+Raw Current,"Energie fließt, der Puls ist da – präsent und rockig."
+Sonic Tapestry,"Keine harten Beats; feine elektronische Fäden im Hintergrund, die sich edel um die Akustikinstrumente legen."
+Blue Summer Dream,Melancholisch-sonnige Sommerstimmung.
+Latido Latino,Lateinamerikanische Rhythmen (latido = Herzschlag).
+Cloaked Core,Coverversionen oder Zitate.
+Europe Express: 1/4 Change,Wöchentlicher Wechsel innerhalb einer monatlichen Sendung (wie Roots).
+Groove Ground,"Funk, Soul, Groove – Republik der Tanzbaren."
+Ambient Pop,Genre-Slot: poppige Melodien auf Ambient-Bett.
+African Aroma,Aktuelle und klassische Musik aus Afrika.
+Dream Drift,"Rauchiger Indie mit Beat: nah am Mikrofon, verhangen und langsam pulsierend – à la Cigarettes After Sex."
+Low Light,"Musikalisches Wetter zur blauen Stunde: kühles Dämmerlicht, gedämpfte Farben – und am Horizont kündigt sich der Tag an."
+Glow Pressure,"Dunkel mit Bass – glühend, Druck mit gefährlicher Spannung."
+Somewhere is a Light,"Musik für die Sonnenaufgänge, die gerade irgendwo stattfinden."
+Studio Whisper,Studio-Intimität: auf Nahaufnahme-Tonpegel runter.
+Metronome Measure,"Genauigkeit ist wichtig – Timing, Präzision, Uhrwerk."
+Yacht Club,Yacht Rock und smoothiger Westcoast-Sound.
+Ends Too Soon,Lieder unter 2:30.
+Soul Soup,"Soul zum Kochen: warme Küche, warme Grooves."
+Voice Attention,Stunde der großen Stimmen – Vocals im Zentrum.
+Hip-Hop Hemisphere,Hip-Hop aus allen Hemisphären – nicht nur US.
+Crosscurrents,"Genre-Crossover: Stile, die aufeinanderprallen."
+American Ambrosia,Americana mit Ruhe – Brunch-Time.
+Post Pulse,"Genre-Slot: instrumentaler, aufbauender Post-Rock."
+Grind State,"Gewicht und Groove mit rockigem Druck – fest, greifend und treibend."
+World Sunrise,"Musik aus den Zeitzonen, in denen es bereits hell ist."
+Glitch Glyph,"Bewusste digitale Fehler, Tonaussetzer, abgehackte Vocals – kunstvoll angeordnet zu einer eigenen Poesie."
+Up & Away,Uplifting-Stunde: Leichtigkeit zum Wochenendstart.
+Full Volume Daylight,"Laute Musik, als wäre es Nacht – mitten am Tag."
+Lend Me Your Ears,"Hörer-Beteiligung: Dedikationen, Stimmen, Zuhören."
+Disko Fever,Disco-Klassiker und Neo-Disco im Glitzerlicht.
+Indie Isle,"Genre-Slot: Indie-Folk – Fingerpicking, Harmonien."
+Quiet Quell,Spiritual Currents on Weekend.
+Jam Session,"Improvisations-Vibe: Live-Jams, lange Takes."
+Exile Echo,"Musik aus dem Exil: Künstler fern der Heimat, Klänge, die über Grenzen hinweg nachhallen."
+Voltage Grind,"Fluss mit Bass und Melancholie – Brandung und elektrische Kante, rockig und unter Spannung."
+Ash Circuit,"Ausgebrannt und schwer, müder Grunge – Asche, Restwärme und ein letzter, rockiger Nachhall."
+Signal Garden,"Elektronische Klänge, die wachsen und sich verzweigen: hell, frisch und lebendig."
