@@ -27,6 +27,12 @@ CLOSING = (
     "Arrly\n"
     "💙"
 )
+# Roots: Quarter Change – Thema der Woche (Wechsel jeden Montag, PT).
+# ROOTS_START ist ein Montag, an dem das erste Thema der Liste lief.
+# Green Light & Ivy pausiert gerade; zum Wieder-Aufnehmen einfach in die Liste setzen.
+ROOTS_SHOW = "Roots: Quarter Change"
+ROOTS_START = datetime(2026, 10, 26).date()
+ROOTS_ROTATION = ["River & Crossroads", "Americana", "Raíces Latinas"]
 TAGLINE = "Tune in and follow the pulse on Thinking Frequencies"
 REPO_RAW = "https://raw.githubusercontent.com/TF-Schedule/dj-claude-schedule/main"
 # --------------------------------------------------------------------------
@@ -75,6 +81,11 @@ def cycle_date(block, start):
     return start - timedelta(days=1) if block == 3 else start
 
 
+def roots_theme(day):
+    weeks = (day - ROOTS_START).days // 7
+    return ROOTS_ROTATION[weeks % len(ROOTS_ROTATION)]
+
+
 def label(d):
     return f"{d.strftime('%a')}, {d.month}/{d.day}"
 
@@ -92,7 +103,12 @@ def build(block, now):
         show = sched[(slot.strftime('%A'), fmt_pt(slot))]
         lines.append(f"{fmt_pt(slot)}/{fmt_utc(slot)} {show}")
         if show in desc and not any(n.startswith(f"• {show} ") for n in notes):
-            notes.append(f"• {show} ({fmt_pt(slot)}): {desc[show]}")
+            note = f"• {show} ({fmt_pt(slot)}): {desc[show]}"
+            if show == ROOTS_SHOW and ROOTS_ROTATION:
+                theme = roots_theme(slot.date())
+                theme_desc = desc.get(f"Roots: {theme}")
+                note += f"\n  Diese Woche: {theme}" + (f" – {theme_desc}" if theme_desc else "")
+            notes.append(note)
     lines.append(TAGLINE)
     post = "\n".join(lines)
     notes_text = ("Zu den Sendungen – nutze die Beschreibungen gern, wenn du magst:\n" + "\n".join(notes) + "\n\n") if notes else ""
