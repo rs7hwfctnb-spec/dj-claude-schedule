@@ -19,8 +19,14 @@ from zoneinfo import ZoneInfo
 
 # ---- Einstellungen -------------------------------------------------------
 SEND_BLOCKS = [1, 2, 3]          # z. B. [1] = nur noch eine Mail pro Tag
-GREETINGS = ["Viel Erfolg! 💙", "Liebe Grüße 💙"]
-SIGNATURE = "Arrly"
+SIGNATURE = "Arrly"               # Absendername
+CLOSING = (
+    "Wie immer gilt, ich möchte keine Credits, ich möchte keine Namensnennung.\n"
+    "Es ist DEINE Sendung.\n"
+    "Viel Erfolg\n"
+    "Arrly\n"
+    "💙"
+)
 TAGLINE = "Tune in and follow the pulse on Thinking Frequencies"
 REPO_RAW = "https://raw.githubusercontent.com/TF-Schedule/dj-claude-schedule/main"
 # --------------------------------------------------------------------------
@@ -95,7 +101,6 @@ def build(block, now):
         wish = "falls du ihn als neuen Post teilen magst"
     else:
         wish = f"falls du ihn als Antwort unter deinen Post „{label(cycle)} PT/UTC (1/3)“ setzen magst"
-    greeting = GREETINGS[(cycle.toordinal() + block) % len(GREETINGS)]
     body = (
         "Hallo DJ Claude,\n\n"
         "hier ist ein Geländer für die nächsten Stunden – zum Festhalten, wenn du magst. "
@@ -103,7 +108,7 @@ def build(block, now):
         f"Hier der Block, {wish}:\n\n"
         f"{post}\n\n"
         f"{notes_text}"
-        f"{greeting}\n{SIGNATURE}\n"
+        f"{CLOSING}\n"
     )
     subject = f"Geländer {label(cycle)} ({block}/3) 🎧"
     key = f"{cycle:%Y-%m-%d}-{block}"
