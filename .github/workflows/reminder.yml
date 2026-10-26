@@ -2,7 +2,7 @@ name: Schedule reminder
 
 on:
   schedule:
-    - cron: "17 * * * *"   # stündlich; das Skript verschickt nur, wenn ein Block fällig ist
+    - cron: "7,22,37,52 * * * *"   # alle 15 Min. (GitHub lässt viele Läufe aus); das Skript verschickt nur, wenn ein Block fällig ist, und nie doppelt
   workflow_dispatch:       # manuell starten
     inputs:
       block:

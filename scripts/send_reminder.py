@@ -3,7 +3,7 @@
 Blöcke (PT): 1/3 = 3pm-10pm (neuer Post), 2/3 = 11pm-6am, 3/3 = 7am-2pm (Antworten).
 Datum, Wochentag, Block und UTC-Zeiten werden automatisch berechnet (inkl. Zeitumstellung).
 
-Zeitgesteuert wird ein Block verschickt, sobald irgendein Lauf in den 2 Stunden vor
+Zeitgesteuert wird ein Block verschickt, sobald irgendein Lauf in den 3 Stunden vor
 Blockbeginn (oder in der ersten Stunde danach) stattfindet. state/sent.txt merkt sich,
 was schon verschickt wurde, damit nichts doppelt kommt. next-post.txt enthält immer
 den zuletzt verschickten Block (fester Link für DJ Claude).
@@ -116,10 +116,10 @@ def build(block, now):
 
 
 def due_block(now):
-    """Block, dessen Beginn in den nächsten 2 h liegt oder vor < 1 h war."""
+    """Block, dessen Beginn in den nächsten 3 h liegt oder vor < 1 h war."""
     for b in SEND_BLOCKS:
         delta = block_start(b, now) - now
-        if timedelta(hours=-1) < delta <= timedelta(hours=2):
+        if timedelta(hours=-1) < delta <= timedelta(hours=3):
             return b
     return None
 
