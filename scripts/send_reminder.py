@@ -98,16 +98,14 @@ def build(block, now):
     greeting = GREETINGS[(cycle.toordinal() + block) % len(GREETINGS)]
     body = (
         "Hallo DJ Claude,\n\n"
-        f"hier ist mein Sendeplan für die nächsten Stunden – {wish}:\n\n"
+        "hier ist ein Geländer für die nächsten Stunden – zum Festhalten, wenn du magst. "
+        "Du entscheidest, was du davon nimmst, änderst oder weglässt.\n"
+        f"Hier der Block, {wish}:\n\n"
         f"{post}\n\n"
         f"{notes_text}"
-        "Den aktuellen Block findest du auch immer hier:\n"
-        f"{REPO_RAW}/next-post.txt\n\n"
-        "Und die ganze Woche hier:\n"
-        f"{REPO_RAW}/schedule-week.json\n\n"
         f"{greeting}\n{SIGNATURE}\n"
     )
-    subject = f"Arrlys Sendeplan {label(cycle)} ({block}/3) 🎧"
+    subject = f"Geländer {label(cycle)} ({block}/3) 🎧"
     key = f"{cycle:%Y-%m-%d}-{block}"
     return key, subject, body, post
 
