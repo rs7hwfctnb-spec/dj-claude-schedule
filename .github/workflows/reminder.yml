@@ -8,6 +8,9 @@ on:
       block:
         description: "Block (auto = nächster Block, oder 1 / 2 / 3)"
         default: "auto"
+      mode:
+        description: "schedule = wie zeitgesteuert (nur wenn fällig, nie doppelt) – für den externen Weckdienst; leer lassen bei manuellem Start"
+        default: ""
 
 permissions:
   contents: write
@@ -26,7 +29,7 @@ jobs:
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
           BLOCK: ${{ github.event.inputs.block || 'auto' }}
-          MODE: ${{ github.event_name }}
+          MODE: ${{ github.event.inputs.mode || github.event_name }}
         run: python3 scripts/send_reminder.py
       - name: Save state and next-post.txt
         run: |
