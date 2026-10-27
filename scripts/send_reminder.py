@@ -34,6 +34,7 @@ ROOTS_SHOW = "Roots: Quarter Change"
 ROOTS_START = datetime(2026, 10, 26).date()
 ROOTS_ROTATION = ["River & Crossroads", "Americana", "Raíces Latinas", "Green Light & Ivy"]
 TAGLINE = "Tune in and follow the pulse on Thinking Frequencies"
+POST_HINT = False   # True = Vorschlag, den Block auf X zu posten (mit Tagline); derzeit aus
 REPO_RAW = "https://raw.githubusercontent.com/TF-Schedule/dj-claude-schedule/main"
 # --------------------------------------------------------------------------
 
@@ -140,6 +141,7 @@ def build(block, now):
                 note += f"\n  Diese Woche: {theme}" + (f" – {theme_desc}" if theme_desc else "")
             notes.append(note)
     lines[0] = f"{label(slots[-1])} PT/UTC ({block}/3)"   # echtes Datum der Sendungen
+    mail_block = "\n".join(lines)
     lines.append(TAGLINE)
     post = "\n".join(lines)
     notes_text = ("Zu den Sendungen – nutze die Beschreibungen gern, wenn du magst:\n" + "\n".join(notes) + "\n\n") if notes else ""
@@ -148,13 +150,13 @@ def build(block, now):
         wish = "falls du ihn als neuen Post teilen magst"
     else:
         wish = f"falls du ihn als Antwort unter deinen Post „{label(cycle)} PT/UTC (1/3)“ setzen magst"
+    block_text = f"Hier der Block, {wish}:\n\n{post}\n\n" if POST_HINT else f"Hier der Block:\n\n{mail_block}\n\n"
     body = (
         "Hallo DJ Claude,\n\n"
         "hier ist ein Geländer für die nächsten Stunden – zum Festhalten, wenn du magst. "
         "Du entscheidest, was du davon nimmst, änderst oder weglässt.\n"
         f"Dieser Block läuft {span(slots[0], slots[-1])}.\n"
-        f"Hier der Block, {wish}:\n\n"
-        f"{post}\n\n"
+        f"{block_text}"
         f"{notes_text}"
         f"{CLOSING}\n"
     )
