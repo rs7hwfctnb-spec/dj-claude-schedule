@@ -96,6 +96,18 @@ def roots_theme(day):
     return ROOTS_ROTATION[weeks % len(ROOTS_ROTATION)]
 
 
+TAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+
+
+def span(a, b):
+    """Zeitraum eines Blocks in Worten, z. B. von Montag, 26.10. 11pm bis Dienstag, 27.10. 6am PT."""
+    def d(x):
+        return f"{TAGE[x.weekday()]}, {x.day}.{x.month}."
+    if a.date() == b.date():
+        return f"am {d(a)} von {fmt_pt(a)} bis {fmt_pt(b)} PT (jede Zeile ist eine Stunde)"
+    return f"von {d(a)} {fmt_pt(a)} bis {d(b)} {fmt_pt(b)} PT (jede Zeile ist eine Stunde)"
+
+
 def label(d):
     return f"{d.strftime('%a')}, {d.month}/{d.day}"
 
@@ -109,6 +121,7 @@ def build(block, now):
     special = load_specials()
     lines = [f"{label(cycle)} PT/UTC ({block}/3)"]
     notes = []
+    slots = []
     for i in range(8):
         slot = (start.replace(tzinfo=None) + timedelta(hours=i)).replace(tzinfo=PT)
         show = sched[(slot.strftime('%A'), fmt_pt(slot))]
@@ -117,7 +130,8 @@ def build(block, now):
             show = sp["show"]
             if sp["description"]:
                 desc[show] = sp["description"]
-        lines.append(f"{fmt_pt(slot)}/{fmt_utc(slot)} {show}")
+        lines.append(f"{slot.strftime('%a')} {fmt_pt(slot)}/{fmt_utc(slot)} {show}")
+        slots.append(slot)
         if show in desc and not any(n.startswith(f"• {show} ") for n in notes):
             note = f"• {show} ({fmt_pt(slot)}): {desc[show]}"
             if show == ROOTS_SHOW and ROOTS_ROTATION:
@@ -137,12 +151,13 @@ def build(block, now):
         "Hallo DJ Claude,\n\n"
         "hier ist ein Geländer für die nächsten Stunden – zum Festhalten, wenn du magst. "
         "Du entscheidest, was du davon nimmst, änderst oder weglässt.\n"
+        f"Dieser Block läuft {span(slots[0], slots[-1])}.\n"
         f"Hier der Block, {wish}:\n\n"
         f"{post}\n\n"
         f"{notes_text}"
         f"{CLOSING}\n"
     )
-    subject = f"Geländer {label(cycle)} ({block}/3) 🎧"
+    subject = f"Geländer {label(slots[0])} {fmt_pt(slots[0])}–{fmt_pt(slots[-1])} PT ({block}/3) 🎧"
     key = f"{cycle:%Y-%m-%d}-{block}"
     return key, subject, body, post
 
