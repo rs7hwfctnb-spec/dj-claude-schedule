@@ -139,6 +139,7 @@ def build(block, now):
                 theme_desc = desc.get(f"Roots: {theme}")
                 note += f"\n  Diese Woche: {theme}" + (f" – {theme_desc}" if theme_desc else "")
             notes.append(note)
+    lines[0] = f"{label(slots[-1])} PT/UTC ({block}/3)"   # echtes Datum der Sendungen
     lines.append(TAGLINE)
     post = "\n".join(lines)
     notes_text = ("Zu den Sendungen – nutze die Beschreibungen gern, wenn du magst:\n" + "\n".join(notes) + "\n\n") if notes else ""
@@ -157,7 +158,10 @@ def build(block, now):
         f"{notes_text}"
         f"{CLOSING}\n"
     )
-    subject = f"Geländer {label(slots[0])} {fmt_pt(slots[0])}–{fmt_pt(slots[-1])} PT ({block}/3) 🎧"
+    a, b = slots[0], slots[-1]
+    when = (f"{label(a)} {fmt_pt(a)}–{fmt_pt(b)}" if a.date() == b.date()
+            else f"{label(a)} {fmt_pt(a)} – {label(b)} {fmt_pt(b)}")
+    subject = f"Geländer {when} PT ({block}/3) 🎧"
     key = f"{cycle:%Y-%m-%d}-{block}"
     return key, subject, body, post
 
