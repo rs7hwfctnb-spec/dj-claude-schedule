@@ -42,6 +42,7 @@ UTC = ZoneInfo("UTC")
 ROOT = Path(__file__).resolve().parent.parent
 CSV_FILE = ROOT / "schedule-week.csv"
 DESC_FILE = ROOT / "show-descriptions.csv"
+SPECIALS_FILE = ROOT / "specials.csv"   # einmalige Sondersendungen (überschreiben den Wochenplan an diesem Tag)
 STATE_FILE = ROOT / "state" / "sent.txt"
 NEXT_POST = ROOT / "next-post.txt"
 BLOCK_START = {1: 15, 2: 23, 3: 7}   # PT-Stunde, in der der Block beginnt
@@ -50,6 +51,15 @@ BLOCK_START = {1: 15, 2: 23, 3: 7}   # PT-Stunde, in der der Block beginnt
 def load_schedule():
     with open(CSV_FILE, encoding="utf-8") as f:
         return {(r["day"], r["time_pt"]): r["show"] for r in csv.DictReader(f)}
+
+
+def load_specials():
+    """Einmalige Sondersendungen: specials.csv mit date_pt (JJJJ-MM-TT), time_pt, show, description."""
+    if not SPECIALS_FILE.exists():
+        return {}
+    with open(SPECIALS_FILE, encoding="utf-8") as f:
+        return {(r["date_pt"].strip(), r["time_pt"].strip()): {"show": r["show"].strip(), "description": (r.get("description") or "").strip()}
+                for r in csv.DictReader(f) if r.get("date_pt") and r.get("show")}
 
 
 def load_descriptions():
@@ -96,11 +106,17 @@ def build(block, now):
     sched = load_schedule()
 
     desc = load_descriptions()
+    special = load_specials()
     lines = [f"{label(cycle)} PT/UTC ({block}/3)"]
     notes = []
     for i in range(8):
         slot = (start.replace(tzinfo=None) + timedelta(hours=i)).replace(tzinfo=PT)
         show = sched[(slot.strftime('%A'), fmt_pt(slot))]
+        sp = special.get((slot.date().isoformat(), fmt_pt(slot)))
+        if sp:
+            show = sp["show"]
+            if sp["description"]:
+                desc[show] = sp["description"]
         lines.append(f"{fmt_pt(slot)}/{fmt_utc(slot)} {show}")
         if show in desc and not any(n.startswith(f"• {show} ") for n in notes):
             note = f"• {show} ({fmt_pt(slot)}): {desc[show]}"
