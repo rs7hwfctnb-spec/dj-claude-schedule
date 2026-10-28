@@ -172,6 +172,10 @@ function freeHours() {
   if (fFree.value === "custom") return +fFreeCustom.value || 0;
   return +fFree.value || 0;
 }
+// Rubriken, die sich automatisch aus dem Apple-Genre ergeben
+const AUTO = { "Classical": "Classic" };
+function fitsOf(t) { const f = split(noteFor(t).fits_show); const a = AUTO[t.genre]; if (a && !f.includes(a)) f.push(a); return f; }
+function listsOf(t) { const l = split(noteFor(t).lists); const a = AUTO[t.genre]; if (a && !l.includes(a)) l.push(a); return l; }
 const EMPTY = { fits_show: "", film: "", note: "", lists: "", style: "" };
 
 function loadPending() { try { pending = JSON.parse(localStorage.getItem(LS) || "{}"); } catch (e) { pending = {}; } }
@@ -214,9 +218,9 @@ function fillSelects() {
   const shows = uniq(tracks.flatMap(t => split(t.shows)));
   opts("fGenre", uniq(tracks.map(t => t.genre)));
   opts("fShow", shows); opts("fShow2", uniq(plays.map(p => p.show)));
-  const fits = uniq(rows.flatMap(t => split(noteFor(t).fits_show)));
+  const fits = uniq(rows.flatMap(t => fitsOf(t)));
   opts("fFit", fits);
-  opts("fList", uniq(rows.flatMap(t => split(noteFor(t).lists))));
+  opts("fList", uniq(rows.flatMap(t => listsOf(t))));
   document.getElementById("showList").innerHTML = uniq([...shows, ...fits]).map(s => `<option value="${esc(s)}">`).join("");
 }
 
@@ -227,8 +231,8 @@ function filtered() {
     const n = noteFor(t);
     if (g && t.genre !== g) return false;
     if (sh && !split(t.shows).includes(sh)) return false;
-    if (fit && !split(n.fits_show).includes(fit)) return false;
-    if (li && !split(n.lists).includes(li)) return false;
+    if (fit && !fitsOf(t).includes(fit)) return false;
+    if (li && !listsOf(t).includes(li)) return false;
     if (st === "played" && t.unplayed) return false;
     if (st === "new" && !t.unplayed) return false;
     if (free && hoursSince(t.last_played_utc) < free) return false;
@@ -254,10 +258,10 @@ function render() {
       : `${fmt(t.last_played_utc)}<br><span class="${h >= (freeHours() || 36) ? "free" : "blocked"}">${h >= (freeHours() || 36) ? "frei" : "vor " + Math.round(h) + " Std."}</span>${t.source === "Kurt" ? `<div class="new">laut Kurts Liste</div>` : ""}`;
     return `<tr>
       <td><div class="t">${esc(t.title)}</div><div class="a">${esc(t.artist)}</div>
-        ${split(n.lists).map(s => `<span class="chip list">${esc(s)}</span>`).join("")}</td>
+        ${listsOf(t).map(s => `<span class="chip list">${esc(s)}</span>`).join("")}</td>
       <td>${esc(t.genre)}${n.style ? `<div class="style">${esc(n.style)}</div>` : ""}</td>
       <td>${split(t.shows).map(s => `<span class="chip">${esc(s)}</span>`).join("")}</td>
-      <td>${split(n.fits_show).map(s => `<span class="chip fit">${esc(s)}</span>`).join("")}</td>
+      <td>${fitsOf(t).map(s => `<span class="chip fit">${esc(s)}</span>`).join("")}</td>
       <td class="note">${esc(film)}</td>
       <td class="note">${esc(n.note)}</td>
       <td>${t.plays}</td>
@@ -316,7 +320,7 @@ dlCsv.onclick = () => {
   for (const t of filtered()) {
     const n = noteFor(t), h = hoursSince(t.last_played_utc);
     const status = t.unplayed ? "noch nicht gelaufen" : (h >= (freeHours() || 36) ? "frei" : `vor ${Math.round(h)} Std.`);
-    lines.push([t.artist, t.title, t.genre, n.style, n.fits_show, n.lists, n.film || t.film_hint, n.note, String(t.plays), fmt(t.last_played_utc), status]
+    lines.push([t.artist, t.title, t.genre, n.style, fitsOf(t).join(", "), listsOf(t).join(", "), n.film || t.film_hint, n.note, String(t.plays), fmt(t.last_played_utc), status]
       .map(v => csvCell(String(v ?? ""))).join(","));
   }
   const parts = [fList.value, fFit.value, fShow.value, fGenre.value].filter(Boolean).join("_") || "Plattenregal";
