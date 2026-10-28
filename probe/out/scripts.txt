@@ -1,0 +1,2 @@
+/js/plausible-init.js
+/js/plausible.js
