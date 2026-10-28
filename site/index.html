@@ -74,8 +74,10 @@
       <label>Gelaufen in Sendung<select id="fShow"><option value="">alle</option></select></label>
       <label>Passt zu (deine Notiz)<select id="fFit"><option value="">alle</option></select></label>
       <label>Frei seit mindestens<select id="fFree">
-        <option value="0" selected>egal</option><option value="24">24 Std.</option><option value="48">48 Std.</option>
-        <option value="72">72 Std.</option><option value="300">300 Std.</option></select></label>
+        <option value="0" selected>egal</option><option value="20">20 Std.</option><option value="24">24 Std.</option>
+        <option value="36">36 Std.</option><option value="48">48 Std.</option><option value="72">72 Std.</option>
+        <option value="300">300 Std.</option><option value="custom">eigene Zahl …</option></select>
+        <input id="fFreeCustom" type="number" min="1" step="1" placeholder="Stunden" style="display:none;margin-top:4px"></label>
       <label>Nur mit Film<select id="fFilm"><option value="">egal</option><option value="1">ja</option></select></label>
       <label>Playlist<select id="fList"><option value="">alle</option></select></label>
       <label>Status<select id="fStatus"><option value="">alle</option><option value="played">schon gelaufen</option><option value="new">noch nicht gelaufen</option></select></label>
@@ -166,6 +168,10 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "
 const fmt = iso => iso ? new Date(iso).toLocaleString("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
 const hoursSince = iso => iso ? (Date.now() - new Date(iso).getTime()) / 36e5 : 1e9;
 const split = s => (s || "").split(/\s*[,·]\s*/).filter(Boolean);
+function freeHours() {
+  if (fFree.value === "custom") return +fFreeCustom.value || 0;
+  return +fFree.value || 0;
+}
 const EMPTY = { fits_show: "", film: "", note: "", lists: "", style: "" };
 
 function loadPending() { try { pending = JSON.parse(localStorage.getItem(LS) || "{}"); } catch (e) { pending = {}; } }
@@ -216,7 +222,7 @@ function fillSelects() {
 
 function filtered() {
   const q = document.getElementById("q").value.toLowerCase().trim();
-  const g = fGenre.value, sh = fShow.value, fit = fFit.value, free = +fFree.value, film = fFilm.value, li = fList.value, st = fStatus.value;
+  const g = fGenre.value, sh = fShow.value, fit = fFit.value, free = freeHours(), film = fFilm.value, li = fList.value, st = fStatus.value;
   return rows.filter(t => {
     const n = noteFor(t);
     if (g && t.genre !== g) return false;
@@ -245,7 +251,7 @@ function render() {
     const n = noteFor(t), h = hoursSince(t.last_played_utc);
     const film = n.film || t.film_hint;
     const when = t.unplayed ? `<span class="new">noch nicht gelaufen</span>`
-      : `${fmt(t.last_played_utc)}<br><span class="${h >= 48 ? "free" : "blocked"}">${h >= 48 ? "frei" : "vor " + Math.round(h) + " Std."}</span>${t.source === "Kurt" ? `<div class="new">laut Kurts Liste</div>` : ""}`;
+      : `${fmt(t.last_played_utc)}<br><span class="${h >= (freeHours() || 36) ? "free" : "blocked"}">${h >= (freeHours() || 36) ? "frei" : "vor " + Math.round(h) + " Std."}</span>${t.source === "Kurt" ? `<div class="new">laut Kurts Liste</div>` : ""}`;
     return `<tr>
       <td><div class="t">${esc(t.title)}</div><div class="a">${esc(t.artist)}</div>
         ${split(n.lists).map(s => `<span class="chip list">${esc(s)}</span>`).join("")}</td>
@@ -309,7 +315,7 @@ dlCsv.onclick = () => {
   const lines = [head.join(",")];
   for (const t of filtered()) {
     const n = noteFor(t), h = hoursSince(t.last_played_utc);
-    const status = t.unplayed ? "noch nicht gelaufen" : (h >= 48 ? "frei" : `vor ${Math.round(h)} Std.`);
+    const status = t.unplayed ? "noch nicht gelaufen" : (h >= (freeHours() || 36) ? "frei" : `vor ${Math.round(h)} Std.`);
     lines.push([t.artist, t.title, t.genre, n.style, n.fits_show, n.lists, n.film || t.film_hint, n.note, String(t.plays), fmt(t.last_played_utc), status]
       .map(v => csvCell(String(v ?? ""))).join(","));
   }
@@ -319,7 +325,8 @@ dlCsv.onclick = () => {
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
   document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 };
-for (const id of ["q", "fGenre", "fShow", "fFit", "fFree", "fFilm", "fList", "fStatus"]) document.getElementById(id).addEventListener("input", render);
+fFree.addEventListener("input", () => { fFreeCustom.style.display = fFree.value === "custom" ? "block" : "none"; });
+for (const id of ["q", "fGenre", "fShow", "fFit", "fFree", "fFreeCustom", "fFilm", "fList", "fStatus"]) document.getElementById(id).addEventListener("input", render);
 for (const id of ["q2", "fShow2"]) document.getElementById(id).addEventListener("input", renderPlays);
 document.querySelectorAll("th[data-k]").forEach(th => th.onclick = () => {
   const k = th.dataset.k; sortDir = sortK === k ? -sortDir : (k === "plays" || k === "last_played_utc" ? -1 : 1); sortK = k; render(); });
