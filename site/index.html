@@ -308,12 +308,36 @@ document.addEventListener("click", e => {
 dlgCancel.onclick = () => dlg.close();
 dlgSave.onclick = () => {
   const old = noteFor(editing);
-  pending[key(editing.artist, editing.title)] = { ...EMPTY, ...old, artist: old.artist || editing.artist, title: old.title || editing.title,
-    fits_show: eFit.value.trim(), film: eFilm.value.trim(), note: eNote.value.trim().replace(/\s*\n\s*/g, " ") };
+  const k = key(editing.artist, editing.title);
+  const base = pending[k]?._base || { fits_show: old.fits_show || "", film: old.film || "", note: old.note || "" };   // Stand vor deiner Änderung
+  pending[k] = { ...EMPTY, ...old, artist: old.artist || editing.artist, title: old.title || editing.title,
+    fits_show: eFit.value.trim(), film: eFilm.value.trim(), note: eNote.value.trim().replace(/\s*\n\s*/g, " "), _base: base };
   savePending(); dlg.close(); buildRows(); fillSelects(); render();
 };
+// Vor dem Übernehmen die NEUESTE Notizdatei von GitHub holen und nur deine geänderten Felder einsetzen –
+// so gehen Änderungen, die inzwischen auf GitHub dazugekommen sind, nicht verloren.
+async function freshNotes() {
+  const tries = [
+    () => fetch("https://api.github.com/repos/TF-Schedule/dj-claude-schedule/contents/data/notes.csv?ref=gh-pages&t=" + Date.now(), { headers: { Accept: "application/vnd.github.raw" }, cache: "no-store" }),
+    () => fetch("https://raw.githubusercontent.com/TF-Schedule/dj-claude-schedule/gh-pages/data/notes.csv?t=" + Date.now(), { cache: "no-store" }),
+  ];
+  for (const t of tries) {
+    try { const r = await t(); if (r.ok) { const txt = await r.text(); if (txt.startsWith("artist,title")) return new Map(parseCSV(txt).map(x => [key(x.artist, x.title), { ...EMPTY, ...x }])); } } catch (e) {}
+  }
+  return null;
+}
 saveNotes.onclick = async () => {
-  const all = new Map(notes); for (const [k, v] of Object.entries(pending)) all.set(k, v);
+  const fresh = await freshNotes();
+  const all = new Map(fresh || notes);
+  for (const [k, v] of Object.entries(pending)) {
+    const cur = all.get(k), base = v._base;
+    if (!cur) { const { _base, ...clean } = v; all.set(k, clean); continue; }
+    const merged = { ...cur };
+    for (const f of ["fits_show", "film", "note"])   // nur was du geändert hast; Listen/Stil bleiben wie auf GitHub
+      if (!base || (v[f] || "") !== (base[f] || "")) merged[f] = v[f];
+    all.set(k, merged);
+  }
+  if (!fresh) { alert("Die neueste Notizdatei ist gerade nicht erreichbar. Bitte in ein paar Minuten noch einmal „Notizen übernehmen“ tippen – deine Notizen bleiben hier gespeichert."); return; }
   const lines = [NOTE_COLS.join(",")];
   for (const n of all.values()) if (n.fits_show || n.film || n.note || n.lists) lines.push(NOTE_COLS.map(c => csvCell(n[c] || "")).join(","));
   const text = lines.join("\n") + "\n";
