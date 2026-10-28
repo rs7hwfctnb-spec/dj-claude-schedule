@@ -27,12 +27,16 @@ CLOSING = (
     "Arrly\n"
     "💙"
 )
-# Roots: Quarter Change – Thema der Woche (Wechsel jeden Montag, PT).
-# ROOTS_START ist ein Montag, an dem das erste Thema der Liste lief.
+# Wöchentlich wechselnde Themen (Wechsel jeden Wochentag der Sendung, PT).
+# start = ein Sendetag, an dem das erste Thema der Liste lief; prefix = so heißen die
+# Themen-Beschreibungen in show-descriptions.csv (z. B. „Roots: Americana“).
 # Themen pausieren: einfach aus der Liste nehmen (oder wieder hineinsetzen).
-ROOTS_SHOW = "Roots: Quarter Change"
-ROOTS_START = datetime(2026, 10, 26).date()
-ROOTS_ROTATION = ["River & Crossroads", "Americana", "Raíces Latinas", "Green Light & Ivy"]
+ROTATIONS = {
+    "Roots: Quarter Change": {"start": datetime(2026, 10, 26).date(), "prefix": "Roots: ",
+                              "themes": ["River & Crossroads", "Americana", "Raíces Latinas", "Green Light & Ivy"]},
+    "Europe Express: 1/4 Change": {"start": datetime(2026, 10, 28).date(), "prefix": "Europe Express: ",
+                                   "themes": ["ESC & Eurodance", "Chanson & Liedermacher", "Elektronik", "Britannia"]},
+}
 TAGLINE = "Tune in and follow the pulse on Thinking Frequencies"
 POST_HINT = False   # True = Vorschlag, den Block auf X zu posten (mit Tagline); derzeit aus
 REPO_RAW = "https://raw.githubusercontent.com/TF-Schedule/dj-claude-schedule/main"
@@ -92,9 +96,10 @@ def cycle_date(block, start):
     return start - timedelta(days=1) if block == 3 else start
 
 
-def roots_theme(day):
-    weeks = (day - ROOTS_START).days // 7
-    return ROOTS_ROTATION[weeks % len(ROOTS_ROTATION)]
+def week_theme(show, day):
+    r = ROTATIONS[show]
+    weeks = (day - r["start"]).days // 7
+    return r["themes"][weeks % len(r["themes"])]
 
 
 TAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
@@ -135,9 +140,9 @@ def build(block, now):
         slots.append(slot)
         if show in desc and not any(n.startswith(f"• {show} ") for n in notes):
             note = f"• {show} ({fmt_pt(slot)}): {desc[show]}"
-            if show == ROOTS_SHOW and ROOTS_ROTATION:
-                theme = roots_theme(slot.date())
-                theme_desc = desc.get(f"Roots: {theme}")
+            if show in ROTATIONS and ROTATIONS[show]["themes"]:
+                theme = week_theme(show, slot.date())
+                theme_desc = desc.get(ROTATIONS[show]["prefix"] + theme)
                 note += f"\n  Diese Woche: {theme}" + (f" – {theme_desc}" if theme_desc else "")
             notes.append(note)
     lines[0] = f"{label(slots[-1])} PT/UTC ({block}/3)"   # echtes Datum der Sendungen
