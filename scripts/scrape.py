@@ -12,7 +12,7 @@ Dateien (im Ordner DATA_DIR, im Workflow: Zweig gh-pages, Ordner data/):
   genre_cache.json Apple-Daten pro Titel
   notes.csv        DEINE Notizen – wird vom Skript nie verändert
 """
-import csv, json, os, re, sys, time, urllib.parse, urllib.request
+import csv, json, os, re, sys, time, unicodedata, urllib.parse, urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -21,6 +21,7 @@ DATA = Path(os.environ.get("DATA_DIR") or (ROOT / "docs" / "data"))
 LIVE365 = "https://api.live365.com/station/a46431"
 ANDON = "https://andonlabs.com/radio"
 STREAM_ID = "a46431"
+KURT_URL = "https://kurtwoloch.github.io/andon-fm-library/tf_only.csv"   # Verlauf vor unserem Start, mit Dank an Kurt Woloch
 UA = {"User-Agent": "TF-Schedule listener tool (github.com/TF-Schedule/dj-claude-schedule)"}
 
 PLAYS = DATA / "plays.csv"
@@ -28,9 +29,10 @@ BLOCKS = DATA / "blocks.csv"
 TRACKS = DATA / "tracks.csv"
 CACHE = DATA / "genre_cache.json"
 NOTES = DATA / "notes.csv"
+KURT = DATA / "kurt_tf_only.csv"
 PLAY_COLS = ["start_utc", "artist", "title", "duration_s", "show", "apple_url"]
 BLOCK_COLS = ["start_utc", "show", "description"]
-TRACK_COLS = ["artist", "title", "plays", "last_played_utc", "shows", "genre", "album", "film_hint", "apple_url"]
+TRACK_COLS = ["artist", "title", "plays", "last_played_utc", "shows", "genre", "album", "film_hint", "apple_url", "source"]
 NOTE_COLS = ["artist", "title", "fits_show", "film", "note"]
 
 
@@ -101,6 +103,47 @@ def live365_plays():
     return plays
 
 
+def nfd(s):
+    return unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode().lower()
+
+
+def norm_key(artist, title):
+    """Tolerante Zuordnung (gleiche Regeln wie auf der Webseite)."""
+    a = re.sub(r"\s+(feat\.?|featuring|ft\.)\s.*$", "", nfd(artist))
+    a = re.sub(r"[^a-z0-9]+", " ", re.sub(r"^the\s+", "", a)).strip()
+    t = re.sub(r"\s*[\(\[][^\)\]]*[\)\]]", "", nfd(title))
+    t = re.sub(r"\s+-\s+.*(remaster|version|live|mix|edit|mono|stereo).*$", "", t)
+    t = re.sub(r"[^a-z0-9]+", " ", t).strip()
+    return a + "|" + t
+
+
+def kurt_rows():
+    """Kurts Liste holen (bei Fehler die zuletzt gespeicherte Kopie nehmen)."""
+    try:
+        text = get(KURT_URL, timeout=30)
+        if text.startswith("Artist,Title"):
+            KURT.write_text(text, encoding="utf-8")
+    except Exception as e:
+        print("Kurts Liste nicht erreichbar, nehme Kopie:", e)
+    if not KURT.exists():
+        return []
+    out = []
+    with open(KURT, encoding="utf-8", newline="") as f:
+        for r in csv.DictReader(f):
+            lp = (r.get("Last Played (UTC)") or "").strip()
+            try:
+                lp = iso(lp) if lp else ""
+            except Exception:
+                lp = ""
+            try:
+                n = int(float(r.get("Play Count Total") or 0))
+            except ValueError:
+                n = 0
+            if r.get("Artist") and r.get("Title"):
+                out.append({"artist": r["Artist"].strip(), "title": r["Title"].strip(), "plays": n, "last_played_utc": lp})
+    return out
+
+
 def apple_info(url, artist, title, cache):
     key = f"{artist}|{title}"
     if key in cache:
@@ -120,7 +163,7 @@ def apple_info(url, artist, title, cache):
             alb = info["album"].lower()
             if info["genre"].lower() == "soundtrack" or any(w in alb for w in ("soundtrack", "motion picture", "from the film", "from the movie", "o.s.t", " ost")):
                 info["film_hint"] = info["album"]
-        time.sleep(0.5)
+        time.sleep(2)
     except Exception as e:  # Apple nicht erreichbar -> später erneut versuchen
         print("Apple-Lookup fehlgeschlagen:", key, e)
         return info
@@ -185,11 +228,26 @@ def main():
         if p["show"]:
             a["shows"].add(p["show"])
         a["apple_url"] = p["apple_url"] or a["apple_url"]
+    for a in agg.values():
+        a["source"] = "Regal"
+    # Kurts Liste dazunehmen: gleiche Titel zusammenführen, fehlende ergänzen
+    by_norm = {norm_key(a["artist"], a["title"]): a for a in agg.values()}
+    for k in kurt_rows():
+        a = by_norm.get(norm_key(k["artist"], k["title"]))
+        if a:
+            a["plays"] = max(a["plays"], k["plays"])
+            a["last_played_utc"] = max(a["last_played_utc"], k["last_played_utc"])
+            a["source"] = "Regal + Kurt"
+        else:
+            a = {"artist": k["artist"], "title": k["title"], "plays": k["plays"], "last_played_utc": k["last_played_utc"],
+                 "shows": set(), "apple_url": "", "source": "Kurt"}
+            agg[(k["artist"], k["title"])] = a
+            by_norm[norm_key(k["artist"], k["title"])] = a
     lookups = 0
     rows = []
-    for (artist, title), a in agg.items():
+    for (artist, title), a in sorted(agg.items(), key=lambda kv: kv[1]["last_played_utc"], reverse=True):
         info = cache.get(f"{artist}|{title}")
-        if info is None and lookups < 60:
+        if info is None and lookups < 45:
             info = apple_info(a["apple_url"], artist, title, cache)
             lookups += 1
         info = info or {"genre": "", "album": "", "film_hint": ""}

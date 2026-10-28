@@ -113,6 +113,7 @@
       <tbody id="tbody2"></tbody>
     </table></div>
   </section>
+  <p class="help" style="margin-top:18px">Verlauf vor dem 28.10.2026 und Play-Zahlen: <a href="https://kurtwoloch.github.io/andon-fm-library/" target="_blank" rel="noopener">Andon FM Library von Kurt Woloch</a> – danke! Eigene Daten: Live365, Andon FM, Genres über Apple Music.</p>
 </main>
 
 <dialog id="dlg">
@@ -186,7 +187,7 @@ async function load() {
   const last = plays[0]?.start_utc;
   const newCount = rows.filter(r => r.unplayed).length;
   document.getElementById("stand").textContent =
-    `${tracks.length} gelaufene Titel · ${newCount} aus deinen Playlists noch nicht gelaufen · ${plays.length} Plays · zuletzt aktualisiert: ${last ? fmt(last) + " Uhr" : "–"}`;
+    `${tracks.length} gelaufene Titel (inkl. Kurts Liste) · ${newCount} aus deinen Playlists noch nicht gelaufen · ${plays.length} Plays · zuletzt aktualisiert: ${last ? fmt(last) + " Uhr" : "–"}`;
   fillSelects(); render(); renderPlays();
 }
 
@@ -243,7 +244,7 @@ function render() {
     const n = noteFor(t), h = hoursSince(t.last_played_utc);
     const film = n.film || t.film_hint;
     const when = t.unplayed ? `<span class="new">noch nicht gelaufen</span>`
-      : `${fmt(t.last_played_utc)}<br><span class="${h >= 48 ? "free" : "blocked"}">${h >= 48 ? "frei" : "vor " + Math.round(h) + " Std."}</span>`;
+      : `${fmt(t.last_played_utc)}<br><span class="${h >= 48 ? "free" : "blocked"}">${h >= 48 ? "frei" : "vor " + Math.round(h) + " Std."}</span>${t.source === "Kurt" ? `<div class="new">laut Kurts Liste</div>` : ""}`;
     return `<tr>
       <td><div class="t">${esc(t.title)}</div><div class="a">${esc(t.artist)}</div>
         ${split(n.lists).map(s => `<span class="chip list">${esc(s)}</span>`).join("")}</td>
