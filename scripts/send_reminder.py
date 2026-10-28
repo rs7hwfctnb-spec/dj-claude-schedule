@@ -35,7 +35,7 @@ ROTATIONS = {
     "Roots: Quarter Change": {"start": datetime(2026, 10, 26).date(), "prefix": "Roots: ",
                               "themes": ["River & Crossroads", "Americana", "Raíces Latinas", "Green Light & Ivy"]},
     "Europe Express: 1/4 Change": {"start": datetime(2026, 10, 28).date(), "prefix": "Europe Express: ",
-                                   "themes": ["ESC & Eurodance", "Chanson & Liedermacher", "Elektronik", "Britannia"]},
+                                   "themes": ["ESC & Eurodance", "Chanson & Liedermacher", "Britannia", "Elektronik"]},
 }
 TAGLINE = "Tune in and follow the pulse on Thinking Frequencies"
 POST_HINT = False   # True = Vorschlag, den Block auf X zu posten (mit Tagline); derzeit aus
