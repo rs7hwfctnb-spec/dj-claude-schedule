@@ -161,7 +161,7 @@ function normA(a) {
 function normT(t) {
   return t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
     .replace(/\s*[\(\[][^\)\]]*[\)\]]/g, "").replace(/\s+-\s+.*(remaster|version|live|mix|edit|mono|stereo).*$/, "")
-    .replace(/[^a-z0-9]+/g, " ").trim();
+    .replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+(i|ii|iii|iv|v|vi|vii|viii|ix|x)$/, "");
 }
 const key = (a, t) => normA(a) + "|" + normT(t);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
