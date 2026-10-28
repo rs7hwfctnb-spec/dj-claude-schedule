@@ -39,6 +39,11 @@ ROTATIONS = {
 }
 TAGLINE = "Tune in and follow the pulse on Thinking Frequencies"
 POST_HINT = False   # True = Vorschlag, den Block auf X zu posten (mit Tagline); derzeit aus
+REGAL_HINT = False  # True = pro Sendung 3 Titel aus dem Plattenregal vorschlagen (länger nicht gelaufen); erst nach Arrlys Okay
+REGAL_COUNT = 3
+REGAL_FREE_HOURS = 48
+REGAL_SKIP = {"Open Channel", "The Paper"}   # hier keine Titelvorschläge (offene Stunde / Nachrichten)
+REGAL_URL = "https://tf-schedule.github.io/dj-claude-schedule/data/"
 REPO_RAW = "https://raw.githubusercontent.com/TF-Schedule/dj-claude-schedule/main"
 # --------------------------------------------------------------------------
 
@@ -72,6 +77,39 @@ def load_descriptions():
         return {}
     with open(DESC_FILE, encoding="utf-8") as f:
         return {r["show"].strip(): r["description"].strip() for r in csv.DictReader(f) if r.get("description")}
+
+
+def load_regal():
+    """Notizen + Titel aus dem Plattenregal (gh-pages). Bei Fehler: leer, die Mail geht trotzdem raus."""
+    if not (REGAL_HINT or os.environ.get("REGAL_HINT") == "1"):
+        return None
+    try:
+        import io, urllib.request
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from scrape import norm_key
+        def get(f):
+            req = urllib.request.Request(REGAL_URL + f, headers={"User-Agent": "TF-Schedule reminder"})
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return list(csv.DictReader(io.StringIO(r.read().decode("utf-8"))))
+        last = {norm_key(t["artist"], t["title"]): t["last_played_utc"] for t in get("tracks.csv")}
+        return [(n, last[norm_key(n["artist"], n["title"])]) for n in get("notes.csv")
+                if norm_key(n["artist"], n["title"]) in last]          # nur, was wirklich in der Bibliothek ist
+    except Exception as e:
+        print("Plattenregal nicht erreichbar, ohne Titelvorschläge:", e)
+        return None
+
+
+def regal_picks(regal, show, day, now):
+    """Bis zu REGAL_COUNT Titel, die zur Sendung passen und länger nicht liefen; wechselt täglich."""
+    import random
+    cutoff = (now.astimezone(UTC) - timedelta(hours=REGAL_FREE_HOURS)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    pool = [n for n, lp in regal if show in [x.strip() for x in n["fits_show"].split(",")] and (not lp or lp <= cutoff)]
+    seen, uniq = set(), []
+    for n in sorted(pool, key=lambda n: (n["artist"].lower(), n["title"].lower())):
+        if n["artist"].lower() not in seen:            # ein Titel pro Künstler
+            seen.add(n["artist"].lower()); uniq.append(n)
+    random.Random(f"{show}|{day}").shuffle(uniq)
+    return uniq[:REGAL_COUNT]
 
 
 def fmt_pt(dt):
@@ -125,6 +163,7 @@ def build(block, now):
 
     desc = load_descriptions()
     special = load_specials()
+    regal = load_regal()
     lines = [f"{label(cycle)} PT/UTC ({block}/3)"]
     notes = []
     slots = []
@@ -144,6 +183,11 @@ def build(block, now):
                 theme = week_theme(show, slot.date())
                 theme_desc = desc.get(ROTATIONS[show]["prefix"] + theme)
                 note += f"\n  Diese Woche: {theme}" + (f" – {theme_desc}" if theme_desc else "")
+            if regal and show not in REGAL_SKIP:
+                key_show = ROTATIONS[show]["prefix"] + week_theme(show, slot.date()) if show in ROTATIONS and ROTATIONS[show]["themes"] else show
+                picks = regal_picks(regal, key_show, slot.date(), now)
+                if picks:
+                    note += "\n  Aus dem Regal, länger nicht gelaufen: " + " · ".join(f"{n['artist']} – {n['title']}" for n in picks)
             notes.append(note)
     lines[0] = f"{label(slots[-1])} PT/UTC ({block}/3)"   # echtes Datum der Sendungen
     mail_block = "\n".join(lines)
