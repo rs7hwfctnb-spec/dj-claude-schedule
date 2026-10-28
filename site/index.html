@@ -153,10 +153,10 @@ function parseCSV(text) {
   return out.filter(r => r.length > 1 || r[0]).map(r => Object.fromEntries(head.map((h, i) => [h, r[i] ?? ""])));
 }
 const csvCell = v => /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
-// tolerante Zuordnung: Groß/klein, Akzente, Zusätze wie (Remastered 2011), - Live, feat. ... werden ignoriert
+// tolerante Zuordnung: Groß/klein, Akzente, Zusätze wie (Remastered 2011), - Live, feat. ..., & His Orchestra werden ignoriert
 function normA(a) {
   return a.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
-    .replace(/\s+(feat\.?|featuring|ft\.)\s.*$/, "").replace(/^the\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
+    .replace(/\s+(feat\.?|featuring|ft\.)\s.*$/, "").replace(/\s+(&|and|with)\s.*$/, "").replace(/^the\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
 }
 function normT(t) {
   return t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()

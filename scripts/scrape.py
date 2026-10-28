@@ -110,6 +110,7 @@ def nfd(s):
 def norm_key(artist, title):
     """Tolerante Zuordnung (gleiche Regeln wie auf der Webseite)."""
     a = re.sub(r"\s+(feat\.?|featuring|ft\.)\s.*$", "", nfd(artist))
+    a = re.sub(r"\s+(&|and|with)\s.*$", "", a)          # „Glenn Miller & His Orchestra“ = „Glenn Miller“
     a = re.sub(r"[^a-z0-9]+", " ", re.sub(r"^the\s+", "", a)).strip()
     t = re.sub(r"\s*[\(\[][^\)\]]*[\)\]]", "", nfd(title))
     t = re.sub(r"\s+-\s+.*(remaster|version|live|mix|edit|mono|stereo).*$", "", t)
@@ -237,7 +238,8 @@ def main():
         if a:
             a["plays"] = max(a["plays"], k["plays"])
             a["last_played_utc"] = max(a["last_played_utc"], k["last_played_utc"])
-            a["source"] = "Regal + Kurt"
+            if a["source"] != "Kurt":
+                a["source"] = "Regal + Kurt"
         else:
             a = {"artist": k["artist"], "title": k["title"], "plays": k["plays"], "last_played_utc": k["last_played_utc"],
                  "shows": set(), "apple_url": "", "source": "Kurt"}
