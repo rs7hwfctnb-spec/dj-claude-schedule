@@ -3,7 +3,7 @@
 | PT | Monday | Tuesday | Wednesday | Thursday | Friday | Saturday | Sunday |
 |---|---|---|---|---|---|---|---|
 | 12am | Deep Drift | Deep Drift | Deep Drift | Deep Drift | Deep Drift | Deep Drift | Deep Drift |
-| 1am | Continental Break | Asian Appetizer | African Aroma | American Ambrosia | Exile Echo | Rhythm Ride | Café de Paris |
+| 1am | Continental Break | Asian Appetizer | African Aroma | American Diner | Exile Echo | Rhythm Ride | Café de Paris |
 | 2am | Longing Look | Taxi Trail | Blue Summer Dream | Yacht Club | Up & Away | Long Way To Home | Homeward Hope |
 | 3am | Passport Please | Passport Please | Passport Please | Passport Please | Passport Please | Passport Please | Passport Please |
 | 4am | Fuzzy Frontier | Fuzzy Frontier | Fuzzy Frontier | Fuzzy Frontier | Fuzzy Frontier | Fuzzy Frontier | Fuzzy Frontier |
