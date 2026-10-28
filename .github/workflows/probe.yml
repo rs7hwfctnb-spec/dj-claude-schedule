@@ -9,43 +9,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Probe now-playing sources
+      - name: Full Live365 JSON
         run: |
-          set +e
-          mkdir -p probe/np
-          UA="Mozilla/5.0 (probe for listener tool)"
-          for u in https://api.live365.com/station/a46431 https://api.live365.com/v2/station/a46431 "https://api.live365.com/station/a46431/history" "https://live365.com/station/a46431"; do
-            n=$(echo "$u" | tr -c 'a-zA-Z0-9' '_'); curl -sSL -m 20 -A "$UA" -o "probe/np/$n.txt" -w "$u %{http_code} %{content_type} %{size_download}\n" "$u" >> probe/np/status.txt
-            head -c 3000 "probe/np/$n.txt" > "probe/np/$n.head"; rm -f "probe/np/$n.txt"
-          done
-          # ICY metadata from the stream
-          curl -sS -m 15 -A "$UA" -H "Icy-MetaData: 1" -D probe/np/icy_headers.txt -o probe/np/icy.bin https://streaming.live365.com/a46431
-          python3 - <<'PY'
-          import re
-          h=open('probe/np/icy_headers.txt',errors='ignore').read()
-          m=re.search(r'icy-metaint:\s*(\d+)',h,re.I)
-          b=open('probe/np/icy.bin','rb').read()
-          out=[]
-          if m:
-              n=int(m.group(1)); p=n
-              while p < len(b):
-                  L=b[p]*16
-                  if L: out.append(b[p+1:p+1+L].decode('utf8','ignore'))
-                  p+=1+L+n
-          open('probe/np/icy_meta.txt','w').write('\n'.join(out) or 'no metaint/meta')
-          PY
-          rm -f probe/np/icy.bin
-          # Client JS of andonlabs radio page
-          curl -sSL -A "$UA" -o r.html https://andonlabs.com/radio
-          grep -oE '_app/immutable/[A-Za-z0-9_./-]+\.js' r.html | sort -u > probe/np/js_list.txt
-          i=0; for s in $(cat probe/np/js_list.txt); do i=$((i+1)); curl -sSL -A "$UA" -o "j$i.js" "https://andonlabs.com/$s"; done
-          grep -ohE 'from"\./[A-Za-z0-9_.-]+\.js"|"\.\./chunks/[A-Za-z0-9_.-]+\.js"|"\./[A-Za-z0-9_.-]+\.js"' j*.js | grep -oE '[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.js' | sort -u > probe/np/chunks.txt
-          k=0; for c in $(cat probe/np/chunks.txt); do k=$((k+1)); curl -sSL -A "$UA" -o "c$k.js" "https://andonlabs.com/_app/immutable/chunks/$c"; done
-          grep -ohE "https?://[A-Za-z0-9._/-]*(api|live365|now|track|metadata|radio)[A-Za-z0-9._/?=&{}\$-]*|[\"'\`]/api/[A-Za-z0-9_/{}\$.-]*" j*.js c*.js 2>/dev/null | sort -u > probe/np/js_endpoints.txt
-          grep -ohE ".{120}(nowPlaying|now_playing|currentTrack|Loading\.\.\.).{200}" j*.js c*.js 2>/dev/null | head -20 > probe/np/js_np_context.txt
-          ls -la probe/np
+          mkdir -p probe/np2
+          curl -sSL -m 20 -o probe/np2/station.json https://api.live365.com/station/a46431
+          sleep 240
+          curl -sSL -m 20 -o probe/np2/station_later.json https://api.live365.com/station/a46431
       - name: Save
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add probe/np && git commit -m "Probe results 2" && git push
+          git add probe/np2 && git commit -m "Probe results 3" && git push
