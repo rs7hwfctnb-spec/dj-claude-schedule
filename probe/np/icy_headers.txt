@@ -1,0 +1,14 @@
+HTTP/2 302 
+date: Wed, 28 Oct 2026 06:16:43 GMT
+content-length: 0
+location: https://das-edge63-live365-dal03.cdnstream.com/a46431
+server: cloudflare
+vary: Origin
+x-content-type-options: nosniff
+cache-control: private, max-age=5
+set-cookie: BALSRV=das-edge63-live365-dal03.cdnstream.com; expires=Thu, 29 Oct 2026 06:16:43 GMT; path=/
+cf-cache-status: DYNAMIC
+nel: {"report_to":"cf-nel","success_fraction":0.0,"max_age":604800}
+report-to: {"group":"cf-nel","max_age":604800,"endpoints":[{"url":"https://a.nel.cloudflare.com/report/v4?s=pyb8hKT5ibWZxNY1A6NkuyO28z47OtTWgCQnHqHZZrgblLT%2BfoVVwuRAXt7UuiAG6EktFgH68Wi7ZcROGoLM6lzEYf1nVQliBREmk%2BSz5%2Fy%2BGiCafBaHirGvji%2Bl1IYm4lVZR8jQWQ%3D%3D"}]}
+cf-ray: a517d035de02812b-MSP
+
