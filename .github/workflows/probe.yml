@@ -9,33 +9,43 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - name: Fetch dashboard and scripts
+      - name: Probe now-playing sources
         run: |
-          mkdir -p probe/out
+          set +e
+          mkdir -p probe/np
           UA="Mozilla/5.0 (probe for listener tool)"
-          curl -sSL -A "$UA" -o probe/out/radio.html -w "radio %{http_code} %{size_download}\n" https://andonlabs.com/radio | tee probe/out/status.txt
-          grep -oE '(src|href)="[^"]+\.js"' probe/out/radio.html | sed -E 's/.*="([^"]+)"/\1/' | sort -u > probe/out/scripts.txt || true
-          grep -oE '"/_app/immutable/[^"]+\.js"' probe/out/radio.html | tr -d '"' | sort -u >> probe/out/scripts.txt || true
-          sort -u -o probe/out/scripts.txt probe/out/scripts.txt
-          i=0
-          for s in $(cat probe/out/scripts.txt); do
-            u="$s"; case "$u" in http*) ;; *) u="https://andonlabs.com$s";; esac
-            i=$((i+1)); curl -sSL -A "$UA" -o "probe/out/js_$i.js" "$u" || true
+          for u in https://api.live365.com/station/a46431 https://api.live365.com/v2/station/a46431 "https://api.live365.com/station/a46431/history" "https://live365.com/station/a46431"; do
+            n=$(echo "$u" | tr -c 'a-zA-Z0-9' '_'); curl -sSL -m 20 -A "$UA" -o "probe/np/$n.txt" -w "$u %{http_code} %{content_type} %{size_download}\n" "$u" >> probe/np/status.txt
+            head -c 3000 "probe/np/$n.txt" > "probe/np/$n.head"; rm -f "probe/np/$n.txt"
           done
-          # Nachgeladene Chunks: einmal eine Ebene tiefer
-          grep -ohE '\./[A-Za-z0-9_.-]+\.js|/_app/immutable/[A-Za-z0-9_./-]+\.js' probe/out/js_*.js 2>/dev/null | sort -u | head -150 > probe/out/chunks.txt || true
-          j=0
-          for c in $(cat probe/out/chunks.txt); do
-            case "$c" in ./*) u="https://andonlabs.com/_app/immutable/chunks/${c#./}";; *) u="https://andonlabs.com$c";; esac
-            j=$((j+1)); curl -sSL -A "$UA" -o "probe/out/chunk_$j.js" "$u" || true
-          done
-          grep -ohE "https?://[A-Za-z0-9._/-]*(api|live365|radio|station|stream|now|track|play|ws)[A-Za-z0-9._/?=&{}$-]*|['\"\`]/api/[A-Za-z0-9_/{}$.-]*" probe/out/*.html probe/out/*.js 2>/dev/null | sort -u > probe/out/endpoints.txt || true
-          grep -oiE "live365[^\"' ]{0,80}" probe/out/* 2>/dev/null | sort -u | head -50 > probe/out/live365.txt || true
-          grep -oiE "(now.?playing|currentTrack|nowPlaying|schedule)[^\"' ]{0,60}" probe/out/*.html | sort -u | head -50 > probe/out/html_hints.txt || true
-          ls -la probe/out | head -20
+          # ICY metadata from the stream
+          curl -sS -m 15 -A "$UA" -H "Icy-MetaData: 1" -D probe/np/icy_headers.txt -o probe/np/icy.bin https://streaming.live365.com/a46431
+          python3 - <<'PY'
+          import re
+          h=open('probe/np/icy_headers.txt',errors='ignore').read()
+          m=re.search(r'icy-metaint:\s*(\d+)',h,re.I)
+          b=open('probe/np/icy.bin','rb').read()
+          out=[]
+          if m:
+              n=int(m.group(1)); p=n
+              while p < len(b):
+                  L=b[p]*16
+                  if L: out.append(b[p+1:p+1+L].decode('utf8','ignore'))
+                  p+=1+L+n
+          open('probe/np/icy_meta.txt','w').write('\n'.join(out) or 'no metaint/meta')
+          PY
+          rm -f probe/np/icy.bin
+          # Client JS of andonlabs radio page
+          curl -sSL -A "$UA" -o r.html https://andonlabs.com/radio
+          grep -oE '_app/immutable/[A-Za-z0-9_./-]+\.js' r.html | sort -u > probe/np/js_list.txt
+          i=0; for s in $(cat probe/np/js_list.txt); do i=$((i+1)); curl -sSL -A "$UA" -o "j$i.js" "https://andonlabs.com/$s"; done
+          grep -ohE 'from"\./[A-Za-z0-9_.-]+\.js"|"\.\./chunks/[A-Za-z0-9_.-]+\.js"|"\./[A-Za-z0-9_.-]+\.js"' j*.js | grep -oE '[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.js' | sort -u > probe/np/chunks.txt
+          k=0; for c in $(cat probe/np/chunks.txt); do k=$((k+1)); curl -sSL -A "$UA" -o "c$k.js" "https://andonlabs.com/_app/immutable/chunks/$c"; done
+          grep -ohE "https?://[A-Za-z0-9._/-]*(api|live365|now|track|metadata|radio)[A-Za-z0-9._/?=&{}\$-]*|[\"'\`]/api/[A-Za-z0-9_/{}\$.-]*" j*.js c*.js 2>/dev/null | sort -u > probe/np/js_endpoints.txt
+          grep -ohE ".{120}(nowPlaying|now_playing|currentTrack|Loading\.\.\.).{200}" j*.js c*.js 2>/dev/null | head -20 > probe/np/js_np_context.txt
+          ls -la probe/np
       - name: Save
         run: |
-          rm -f probe/out/js_*.js probe/out/chunk_*.js
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add probe && git commit -m "Probe results" && git push
+          git add probe/np && git commit -m "Probe results 2" && git push
