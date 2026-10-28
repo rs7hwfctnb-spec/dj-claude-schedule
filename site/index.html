@@ -91,6 +91,7 @@
     <div class="row">
       <span class="count" id="count"></span>
       <button class="btn" id="copyList">Liste kopieren</button>
+      <button class="btn" id="dlCsv">Als CSV herunterladen</button>
     </div>
     <div class="tablewrap"><table>
       <thead><tr>
@@ -302,6 +303,21 @@ copyList.onclick = async () => {
   const text = filtered().map(t => `${t.artist} – ${t.title}`).join("\n");
   try { await navigator.clipboard.writeText(text); copyList.textContent = "Kopiert ✓"; setTimeout(() => copyList.textContent = "Liste kopieren", 1500); }
   catch (e) { prompt("Bitte kopieren:", text); }
+};
+dlCsv.onclick = () => {
+  const head = ["Künstler", "Titel", "Genre", "Stil", "Passt zu", "Playlists", "Film", "Notiz", "Plays", "Zuletzt (deutsche Zeit)", "Status"];
+  const lines = [head.join(",")];
+  for (const t of filtered()) {
+    const n = noteFor(t), h = hoursSince(t.last_played_utc);
+    const status = t.unplayed ? "noch nicht gelaufen" : (h >= 48 ? "frei" : `vor ${Math.round(h)} Std.`);
+    lines.push([t.artist, t.title, t.genre, n.style, n.fits_show, n.lists, n.film || t.film_hint, n.note, String(t.plays), fmt(t.last_played_utc), status]
+      .map(v => csvCell(String(v ?? ""))).join(","));
+  }
+  const parts = [fList.value, fFit.value, fShow.value, fGenre.value].filter(Boolean).join("_") || "Plattenregal";
+  const name = parts.replace(/[^A-Za-z0-9ÄÖÜäöüß&+ -]+/g, "").replace(/\s+/g, "_") + ".csv";
+  const blob = new Blob(["﻿" + lines.join("\n") + "\n"], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
 };
 for (const id of ["q", "fGenre", "fShow", "fFit", "fFree", "fFilm", "fList", "fStatus"]) document.getElementById(id).addEventListener("input", render);
 for (const id of ["q2", "fShow2"]) document.getElementById(id).addEventListener("input", renderPlays);
