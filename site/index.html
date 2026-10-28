@@ -38,6 +38,9 @@
   th { font-size: 12px; color: var(--muted); font-weight: 600; cursor: pointer; white-space: nowrap; position: sticky; top: 0; background: var(--card); }
   tr:last-child td { border-bottom: none; }
   .t { font-weight: 600; }
+  .tt { display: flex; gap: 10px; align-items: flex-start; }
+  .cover { width: 48px; height: 48px; border-radius: 6px; object-fit: cover; flex: none; background: var(--chip); display: block; }
+  .cover.none { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 18px; }
   .a { color: var(--muted); font-size: 13px; }
   .chip { white-space: nowrap; display: inline-block; background: var(--chip); border-radius: 999px; padding: 1px 8px; font-size: 12px; margin: 1px 2px 1px 0; }
   .chip.fit { background: var(--accent-soft); color: var(--accent); }
@@ -112,11 +115,11 @@
     </div>
     <div class="row"><span class="count" id="count2"></span></div>
     <div class="tablewrap"><table>
-      <thead><tr><th>Zeit (deutsche Zeit)</th><th>Sendung</th><th>Titel</th></tr></thead>
+      <thead><tr><th>Titel</th><th>Zeit (deutsche Zeit)</th><th>Sendung</th></tr></thead>
       <tbody id="tbody2"></tbody>
     </table></div>
   </section>
-  <p class="help" style="margin-top:18px">Verlauf vor dem 28.10.2026 und Play-Zahlen: <a href="https://kurtwoloch.github.io/andon-fm-library/" target="_blank" rel="noopener">Andon FM Library von Kurt Woloch</a> – danke! Eigene Daten: Live365, Andon FM, Genres über Apple Music.</p>
+  <p class="help" style="margin-top:18px">Verlauf vor dem 28.10.2026 und Play-Zahlen: <a href="https://kurtwoloch.github.io/andon-fm-library/" target="_blank" rel="noopener">Andon FM Library von Kurt Woloch</a> – danke! Eigene Daten: Live365, Andon FM, Genres und Cover über Apple Music.</p>
 </main>
 
 <dialog id="dlg">
@@ -202,7 +205,16 @@ async function load() {
   fillSelects(); render(); renderPlays();
 }
 
+// Cover von Apple: klein in der Liste, Tippen öffnet es groß
+let artMap = new Map();
+function cover(url) {
+  if (!url) return `<span class="cover none">♪</span>`;
+  const small = url.replace(/\/\d+x\d+bb\./, "/120x120bb."), big = url.replace(/\/\d+x\d+bb\./, "/600x600bb.");
+  return `<a href="${esc(big)}" target="_blank" rel="noopener"><img class="cover" loading="lazy" src="${esc(small)}" alt=""></a>`;
+}
+
 function buildRows() {
+  artMap = new Map(tracks.filter(t => t.artwork).map(t => [key(t.artist, t.title), t.artwork]));
   const seen = new Set();
   rows = tracks.map(t => { seen.add(key(t.artist, t.title)); return t; });
   for (const [k, n] of [...notes.entries(), ...Object.entries(pending)]) {
@@ -257,8 +269,8 @@ function render() {
     const when = t.unplayed ? `<span class="new">noch nicht gelaufen</span>`
       : `${fmt(t.last_played_utc)}<br><span class="${h >= (freeHours() || 36) ? "free" : "blocked"}">${h >= (freeHours() || 36) ? "frei" : "vor " + Math.round(h) + " Std."}</span>${t.source === "Kurt" ? `<div class="new">laut Kurts Liste</div>` : ""}`;
     return `<tr>
-      <td><div class="t">${esc(t.title)}</div><div class="a">${esc(t.artist)}</div>
-        ${listsOf(t).map(s => `<span class="chip list">${esc(s)}</span>`).join("")}</td>
+      <td><div class="tt">${cover(t.artwork)}<div><div class="t">${esc(t.title)}</div><div class="a">${esc(t.artist)}</div>
+        ${listsOf(t).map(s => `<span class="chip list">${esc(s)}</span>`).join("")}</div></div></td>
       <td>${esc(t.genre)}${n.style ? `<div class="style">${esc(n.style)}</div>` : ""}</td>
       <td>${split(t.shows).map(s => `<span class="chip">${esc(s)}</span>`).join("")}</td>
       <td>${fitsOf(t).map(s => `<span class="chip fit">${esc(s)}</span>`).join("")}</td>
@@ -279,8 +291,8 @@ function renderPlays() {
   const rows = plays.filter(p => (!sh || p.show === sh) && (!q || [p.artist, p.title, p.show].join(" ").toLowerCase().includes(q)));
   document.getElementById("count2").textContent = `${rows.length} Plays`;
   document.getElementById("tbody2").innerHTML = rows.slice(0, 2000).map(p =>
-    `<tr><td>${fmt(p.start_utc)}</td><td>${p.show ? `<span class="chip">${esc(p.show)}</span>` : ""}</td>
-     <td><div class="t">${esc(p.title)}</div><div class="a">${esc(p.artist)}</div></td></tr>`).join("") ||
+    `<tr><td><div class="tt">${cover(artMap.get(key(p.artist, p.title)))}<div><div class="t">${esc(p.title)}</div><div class="a">${esc(p.artist)}</div></div></div></td>
+     <td>${fmt(p.start_utc)}</td><td>${p.show ? `<span class="chip">${esc(p.show)}</span>` : ""}</td></tr>`).join("") ||
     `<tr><td colspan="3" class="empty">Noch keine Daten.</td></tr>`;
 }
 

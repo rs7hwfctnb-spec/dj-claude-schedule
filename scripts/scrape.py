@@ -32,7 +32,7 @@ NOTES = DATA / "notes.csv"
 KURT = DATA / "kurt_tf_only.csv"
 PLAY_COLS = ["start_utc", "artist", "title", "duration_s", "show", "apple_url"]
 BLOCK_COLS = ["start_utc", "show", "description"]
-TRACK_COLS = ["artist", "title", "plays", "last_played_utc", "shows", "genre", "album", "film_hint", "apple_url", "source"]
+TRACK_COLS = ["artist", "title", "plays", "last_played_utc", "shows", "genre", "album", "film_hint", "apple_url", "source", "artwork"]
 NOTE_COLS = ["artist", "title", "fits_show", "film", "note"]
 
 
@@ -145,31 +145,54 @@ def kurt_rows():
     return out
 
 
-def apple_info(url, artist, title, cache):
-    key = f"{artist}|{title}"
-    if key in cache:
-        return cache[key]
-    info = {"genre": "", "album": "", "film_hint": ""}
+EMPTY_INFO = {"genre": "", "album": "", "film_hint": "", "artwork": ""}
+
+
+def parse_apple(r):
+    info = dict(EMPTY_INFO)
+    info["genre"] = r.get("primaryGenreName", "")
+    info["album"] = r.get("collectionName", "")
+    info["artwork"] = r.get("artworkUrl100", "")
+    alb = info["album"].lower()
+    if info["genre"].lower() == "soundtrack" or any(w in alb for w in ("soundtrack", "motion picture", "from the film", "from the movie", "o.s.t", " ost")):
+        info["film_hint"] = info["album"]
+    return info
+
+
+def apple_id(url):
+    m = re.search(r"[?&]i=(\d+)", url or "")
+    return m.group(1) if m else None
+
+
+def apple_batch(items, cache):
+    """Bis zu 150 Titel mit Apple-ID in einer einzigen Abfrage (schont Apple)."""
+    ids = {}
+    for key, a in items:
+        ids.setdefault(apple_id(a["apple_url"]), []).append(key)
     try:
-        m = re.search(r"[?&]i=(\d+)", url or "")
-        if m:
-            res = json.loads(get(f"https://itunes.apple.com/lookup?id={m.group(1)}"))["results"]
-        else:
-            q = urllib.parse.quote(f"{artist} {title}")
-            res = json.loads(get(f"https://itunes.apple.com/search?term={q}&entity=song&limit=1"))["results"]
-        if res:
-            r = res[0]
-            info["genre"] = r.get("primaryGenreName", "")
-            info["album"] = r.get("collectionName", "")
-            alb = info["album"].lower()
-            if info["genre"].lower() == "soundtrack" or any(w in alb for w in ("soundtrack", "motion picture", "from the film", "from the movie", "o.s.t", " ost")):
-                info["film_hint"] = info["album"]
+        res = json.loads(get("https://itunes.apple.com/lookup?id=" + ",".join(ids), timeout=40))["results"]
+        time.sleep(2)
+    except Exception as e:
+        print("Apple-Sammelabfrage fehlgeschlagen:", e)
+        return
+    found = {str(r.get("trackId")): r for r in res if r.get("wrapperType") == "track"}
+    for i, keys in ids.items():
+        for key in keys:
+            old = cache.get(key) or {}
+            cache[key] = {**EMPTY_INFO, **old, **(parse_apple(found[i]) if i in found else {"artwork": old.get("artwork", "")})}
+
+
+def apple_search(artist, title, cache):
+    key = f"{artist}|{title}"
+    try:
+        q = urllib.parse.quote(f"{artist} {title}")
+        res = json.loads(get(f"https://itunes.apple.com/search?term={q}&entity=song&limit=1"))["results"]
         time.sleep(2)
     except Exception as e:  # Apple nicht erreichbar -> später erneut versuchen
         print("Apple-Lookup fehlgeschlagen:", key, e)
-        return info
-    cache[key] = info
-    return info
+        return
+    old = cache.get(key) or {}
+    cache[key] = {**EMPTY_INFO, **old, **(parse_apple(res[0]) if res else {"artwork": ""})}
 
 
 def main():
@@ -245,14 +268,22 @@ def main():
                  "shows": set(), "apple_url": "", "source": "Kurt"}
             agg[(k["artist"], k["title"])] = a
             by_norm[norm_key(k["artist"], k["title"])] = a
+    # Apple: neue Titel zuerst, dann fehlende Cover nachholen (sanft: wenige Abfragen pro Lauf)
+    ordered = sorted(agg.items(), key=lambda kv: kv[1]["last_played_utc"], reverse=True)
+    todo = [(f"{ar}|{ti}", a) for (ar, ti), a in ordered
+            if f"{ar}|{ti}" not in cache or "artwork" not in cache[f"{ar}|{ti}"]]
+    todo.sort(key=lambda x: x[0] in cache)          # noch gar nicht abgefragte zuerst
+    with_id = [x for x in todo if apple_id(x[1]["apple_url"])]
     lookups = 0
+    for i in range(0, min(len(with_id), 450), 150):
+        apple_batch(with_id[i:i + 150], cache)
+        lookups += 1
+    for key, a in [x for x in todo if not apple_id(x[1]["apple_url"])][:40]:
+        apple_search(a["artist"], a["title"], cache)
+        lookups += 1
     rows = []
-    for (artist, title), a in sorted(agg.items(), key=lambda kv: kv[1]["last_played_utc"], reverse=True):
-        info = cache.get(f"{artist}|{title}")
-        if info is None and lookups < 45:
-            info = apple_info(a["apple_url"], artist, title, cache)
-            lookups += 1
-        info = info or {"genre": "", "album": "", "film_hint": ""}
+    for (artist, title), a in ordered:
+        info = {**EMPTY_INFO, **cache.get(f"{artist}|{title}", {})}
         rows.append({**a, "shows": " · ".join(sorted(a["shows"])), **info})
     rows.sort(key=lambda r: r["last_played_utc"], reverse=True)
     write_csv(TRACKS, TRACK_COLS, rows)
