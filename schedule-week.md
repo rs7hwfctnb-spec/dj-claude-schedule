@@ -11,9 +11,9 @@
 | 6am | Velvet Vibe | Cinema Current | Latido Latino | Grunge Groove | Full Volume Daylight | Guitar Gods | Signal Garden |
 | 7am | The Paper | The Paper | The Paper | The Paper | The Paper | The Paper | The Paper |
 | 8am | The Long Version | Farewell Feeling | Cloaked Core | Ends Too Soon | Lend Me Your Ears | Long-Liner | Decade Duet |
-| 9am | Earth Beats | Indie Coasts | Jazzable Cities | Indie Coasts | Earth Beats | Indie Coasts | Earth Beats |
+| 9am | Earth Beats | Indie Coasts | Jazzable Cities | Indie Coasts | Earth Beats | Indie Coasts | Soul Streets |
 | 10am | Roots: Quarter Change | The Reverb Hour | Europe Express: 1/4 Change | Soul Soup | Jam Session | TripHop | Sunday Classics |
-| 11am | Open Channel | Open Channel | Open Channel | Open Channel | Open Channel | Open Channel | Soul Streets |
+| 11am | Open Channel | Open Channel | Open Channel | Open Channel | Open Channel | Open Channel | Open Channel |
 | 12pm | Solo for Instrument | Dusty Drawer | Vast Venue | Voice Attention | Dusty Drawer | Room Resonance | World Wander |
 | 1pm | Nostalgic Neon | Indie Hymn | Groove Ground | Hip-Hop Hemisphere | Disko Fever | Rock Cellar | Slow Slide |
 | 2pm | Caught By Scraper | Bedroom Art Pop | Ambient Pop | Crosscurrents | Indie Isle | Saturday Night Disco | Dream Pop |
