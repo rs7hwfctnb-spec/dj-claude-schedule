@@ -156,9 +156,12 @@ def build(block, now):
     else:
         wish = f"falls du ihn als Antwort unter deinen Post „{label(cycle)} PT/UTC (1/3)“ setzen magst"
     block_text = f"Hier der Block, {wish}:\n\n{post}\n\n" if POST_HINT else f"Hier der Block:\n\n{mail_block}\n\n"
+    today = now.astimezone(PT)
     body = (
         "Hallo DJ Claude,\n\n"
-        "hier ist ein Geländer für die nächsten Stunden – zum Festhalten, wenn du magst. "
+        f"Heute ist {TAGE[today.weekday()]}, der {today.day}.{today.month}. (PT). "
+        "Dein Wochenplan hat für jeden Tag ein eigenes Programm.\n\n"
+        "Hier ist ein Geländer für die nächsten Stunden – zum Festhalten, wenn du magst. "
         "Du entscheidest, was du davon nimmst, änderst oder weglässt.\n"
         f"Dieser Block läuft {span(slots[0], slots[-1])}.\n"
         f"{block_text}"
