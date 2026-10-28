@@ -42,6 +42,9 @@
   .chip { white-space: nowrap; display: inline-block; background: var(--chip); border-radius: 999px; padding: 1px 8px; font-size: 12px; margin: 1px 2px 1px 0; }
   .chip.fit { background: var(--accent-soft); color: var(--accent); }
   .free { color: var(--free); font-size: 12px; }
+  .new { color: var(--muted); font-size: 12px; font-style: italic; }
+  .chip.list { background: transparent; border: 1px solid var(--line); }
+  .style { color: var(--muted); font-size: 12px; }
   .blocked { color: var(--blocked); font-size: 12px; }
   .note { font-size: 13px; }
   .edit { border: none; background: none; cursor: pointer; font-size: 16px; color: var(--muted); }
@@ -74,6 +77,8 @@
         <option value="0" selected>egal</option><option value="24">24 Std.</option><option value="48">48 Std.</option>
         <option value="72">72 Std.</option><option value="300">300 Std.</option></select></label>
       <label>Nur mit Film<select id="fFilm"><option value="">egal</option><option value="1">ja</option></select></label>
+      <label>Playlist<select id="fList"><option value="">alle</option></select></label>
+      <label>Status<select id="fStatus"><option value="">alle</option><option value="played">schon gelaufen</option><option value="new">noch nicht gelaufen</option></select></label>
     </div>
     <div class="pending" id="pending">
       <b id="pendingN"></b> – noch nicht auf GitHub gespeichert.
@@ -125,100 +130,130 @@
 
 <script>
 const REPO_EDIT = "https://github.com/TF-Schedule/dj-claude-schedule/edit/gh-pages/data/notes.csv";
-const NOTE_COLS = ["artist", "title", "fits_show", "film", "note"];
-const LS = "tf_pending_notes_v1";
-let tracks = [], plays = [], notes = new Map(), pending = {}, sortK = "last_played_utc", sortDir = -1;
+const NOTE_COLS = ["artist", "title", "fits_show", "film", "note", "lists", "style"];
+const LS = "tf_pending_notes_v2";
+let tracks = [], rows = [], plays = [], notes = new Map(), pending = {}, sortK = "last_played_utc", sortDir = -1;
 
 function parseCSV(text) {
-  const rows = []; let row = [], f = "", q = false;
+  const out = []; let row = [], f = "", q = false;
   for (let i = 0; i < text.length; i++) {
     const c = text[i];
     if (q) { if (c === '"') { if (text[i + 1] === '"') { f += '"'; i++; } else q = false; } else f += c; }
     else if (c === '"') q = true;
     else if (c === ",") { row.push(f); f = ""; }
-    else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(f); rows.push(row); row = []; f = ""; }
+    else if (c === "\n" || c === "\r") { if (c === "\r" && text[i + 1] === "\n") i++; row.push(f); out.push(row); row = []; f = ""; }
     else f += c;
   }
-  if (f !== "" || row.length) { row.push(f); rows.push(row); }
-  const head = rows.shift() || [];
-  return rows.filter(r => r.length > 1 || r[0]).map(r => Object.fromEntries(head.map((h, i) => [h, r[i] ?? ""])));
+  if (f !== "" || row.length) { row.push(f); out.push(row); }
+  const head = out.shift() || [];
+  return out.filter(r => r.length > 1 || r[0]).map(r => Object.fromEntries(head.map((h, i) => [h, r[i] ?? ""])));
 }
 const csvCell = v => /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
-const key = (a, t) => a + "\u0001" + t;
+// tolerante Zuordnung: Groß/klein, Akzente, Zusätze wie (Remastered 2011), - Live, feat. ... werden ignoriert
+function normA(a) {
+  return a.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+    .replace(/\s+(feat\.?|featuring|ft\.)\s.*$/, "").replace(/^the\s+/, "").replace(/[^a-z0-9]+/g, " ").trim();
+}
+function normT(t) {
+  return t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
+    .replace(/\s*[\(\[][^\)\]]*[\)\]]/g, "").replace(/\s+-\s+.*(remaster|version|live|mix|edit|mono|stereo).*$/, "")
+    .replace(/[^a-z0-9]+/g, " ").trim();
+}
+const key = (a, t) => normA(a) + "|" + normT(t);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fmt = iso => iso ? new Date(iso).toLocaleString("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
 const hoursSince = iso => iso ? (Date.now() - new Date(iso).getTime()) / 36e5 : 1e9;
+const split = s => (s || "").split(/\s*[,·]\s*/).filter(Boolean);
+const EMPTY = { fits_show: "", film: "", note: "", lists: "", style: "" };
 
 function loadPending() { try { pending = JSON.parse(localStorage.getItem(LS) || "{}"); } catch (e) { pending = {}; } }
 function savePending() { try { localStorage.setItem(LS, JSON.stringify(pending)); } catch (e) {} }
-function noteFor(a, t) { const k = key(a, t); return pending[k] || notes.get(k) || { fits_show: "", film: "", note: "" }; }
+function noteFor(t) { const k = key(t.artist, t.title); return pending[k] || notes.get(k) || EMPTY; }
 
 async function load() {
   const get = async f => { const r = await fetch("data/" + f + "?t=" + Date.now()); return r.ok ? parseCSV(await r.text()) : []; };
   const [t, n, p] = await Promise.all([get("tracks.csv"), get("notes.csv"), get("plays.csv")]);
   tracks = t.map(r => ({ ...r, plays: +r.plays || 0 }));
   plays = p.reverse();
-  notes = new Map(n.map(r => [key(r.artist, r.title), r]));
+  notes = new Map(n.map(r => [key(r.artist, r.title), { ...EMPTY, ...r }]));
   loadPending();
   for (const k of Object.keys(pending)) {           // schon auf GitHub angekommen? -> nicht mehr ausstehend
     const s = notes.get(k), m = pending[k];
     if (s && s.fits_show === m.fits_show && s.film === m.film && s.note === m.note) delete pending[k];
   }
   savePending();
+  buildRows();
   const last = plays[0]?.start_utc;
+  const newCount = rows.filter(r => r.unplayed).length;
   document.getElementById("stand").textContent =
-    `${tracks.length} verschiedene Titel · ${plays.length} Plays · zuletzt aktualisiert: ${last ? fmt(last) + " Uhr" : "–"}`;
+    `${tracks.length} gelaufene Titel · ${newCount} aus deinen Playlists noch nicht gelaufen · ${plays.length} Plays · zuletzt aktualisiert: ${last ? fmt(last) + " Uhr" : "–"}`;
   fillSelects(); render(); renderPlays();
+}
+
+function buildRows() {
+  const seen = new Set();
+  rows = tracks.map(t => { seen.add(key(t.artist, t.title)); return t; });
+  for (const [k, n] of [...notes.entries(), ...Object.entries(pending)]) {
+    if (seen.has(k)) continue; seen.add(k);
+    rows.push({ artist: n.artist, title: n.title, plays: 0, last_played_utc: "", shows: "", genre: "", album: "", film_hint: "", unplayed: true });
+  }
 }
 
 function fillSelects() {
   const uniq = arr => [...new Set(arr.filter(Boolean))].sort((a, b) => a.localeCompare(b, "de"));
   const opts = (id, vals) => { const s = document.getElementById(id), cur = s.value;
     s.innerHTML = '<option value="">alle</option>' + vals.map(v => `<option>${esc(v)}</option>`).join(""); s.value = cur; };
-  const shows = uniq(tracks.flatMap(t => t.shows.split(" · ")));
+  const shows = uniq(tracks.flatMap(t => split(t.shows)));
   opts("fGenre", uniq(tracks.map(t => t.genre)));
   opts("fShow", shows); opts("fShow2", uniq(plays.map(p => p.show)));
-  const fits = uniq(tracks.flatMap(t => noteFor(t.artist, t.title).fits_show.split(",").map(s => s.trim())));
+  const fits = uniq(rows.flatMap(t => split(noteFor(t).fits_show)));
   opts("fFit", fits);
+  opts("fList", uniq(rows.flatMap(t => split(noteFor(t).lists))));
   document.getElementById("showList").innerHTML = uniq([...shows, ...fits]).map(s => `<option value="${esc(s)}">`).join("");
 }
 
 function filtered() {
   const q = document.getElementById("q").value.toLowerCase().trim();
-  const g = fGenre.value, sh = fShow.value, fit = fFit.value, free = +fFree.value, film = fFilm.value;
-  return tracks.filter(t => {
-    const n = noteFor(t.artist, t.title);
+  const g = fGenre.value, sh = fShow.value, fit = fFit.value, free = +fFree.value, film = fFilm.value, li = fList.value, st = fStatus.value;
+  return rows.filter(t => {
+    const n = noteFor(t);
     if (g && t.genre !== g) return false;
-    if (sh && !t.shows.split(" · ").includes(sh)) return false;
-    if (fit && !n.fits_show.split(",").map(s => s.trim()).includes(fit)) return false;
+    if (sh && !split(t.shows).includes(sh)) return false;
+    if (fit && !split(n.fits_show).includes(fit)) return false;
+    if (li && !split(n.lists).includes(li)) return false;
+    if (st === "played" && t.unplayed) return false;
+    if (st === "new" && !t.unplayed) return false;
     if (free && hoursSince(t.last_played_utc) < free) return false;
     if (film && !(n.film || t.film_hint)) return false;
-    if (q && ![t.artist, t.title, t.genre, t.shows, t.album, n.fits_show, n.film, n.note].join(" ").toLowerCase().includes(q)) return false;
+    if (q && ![t.artist, t.title, t.genre, t.shows, t.album, n.fits_show, n.film, n.note, n.lists, n.style].join(" ").toLowerCase().includes(q)) return false;
     return true;
   }).sort((a, b) => {
-    const va = sortK in a ? a[sortK] : noteFor(a.artist, a.title)[sortK] || "";
-    const vb = sortK in b ? b[sortK] : noteFor(b.artist, b.title)[sortK] || "";
+    const va = sortK in a ? a[sortK] : noteFor(a)[sortK] || "";
+    const vb = sortK in b ? b[sortK] : noteFor(b)[sortK] || "";
     return (typeof va === "number" ? va - vb : String(va).localeCompare(String(vb), "de")) * sortDir;
   });
 }
 
 function render() {
-  const rows = filtered();
-  document.getElementById("count").textContent = `${rows.length} Titel`;
+  const list = filtered();
+  document.getElementById("count").textContent = `${list.length} Titel`;
   const tb = document.getElementById("tbody");
-  if (!rows.length) { tb.innerHTML = `<tr><td colspan="9" class="empty">Keine Titel für diese Auswahl.</td></tr>`; }
-  else tb.innerHTML = rows.slice(0, 1500).map((t, i) => {
-    const n = noteFor(t.artist, t.title), h = hoursSince(t.last_played_utc);
+  if (!list.length) { tb.innerHTML = `<tr><td colspan="9" class="empty">Keine Titel für diese Auswahl.</td></tr>`; }
+  else tb.innerHTML = list.slice(0, 2000).map(t => {
+    const n = noteFor(t), h = hoursSince(t.last_played_utc);
     const film = n.film || t.film_hint;
+    const when = t.unplayed ? `<span class="new">noch nicht gelaufen</span>`
+      : `${fmt(t.last_played_utc)}<br><span class="${h >= 48 ? "free" : "blocked"}">${h >= 48 ? "frei" : "vor " + Math.round(h) + " Std."}</span>`;
     return `<tr>
-      <td><div class="t">${esc(t.title)}</div><div class="a">${esc(t.artist)}</div></td>
-      <td>${esc(t.genre)}</td>
-      <td>${t.shows.split(" · ").filter(Boolean).map(s => `<span class="chip">${esc(s)}</span>`).join("")}</td>
-      <td>${n.fits_show.split(",").map(s => s.trim()).filter(Boolean).map(s => `<span class="chip fit">${esc(s)}</span>`).join("")}</td>
+      <td><div class="t">${esc(t.title)}</div><div class="a">${esc(t.artist)}</div>
+        ${split(n.lists).map(s => `<span class="chip list">${esc(s)}</span>`).join("")}</td>
+      <td>${esc(t.genre)}${n.style ? `<div class="style">${esc(n.style)}</div>` : ""}</td>
+      <td>${split(t.shows).map(s => `<span class="chip">${esc(s)}</span>`).join("")}</td>
+      <td>${split(n.fits_show).map(s => `<span class="chip fit">${esc(s)}</span>`).join("")}</td>
       <td class="note">${esc(film)}</td>
       <td class="note">${esc(n.note)}</td>
       <td>${t.plays}</td>
-      <td>${fmt(t.last_played_utc)}<br><span class="${h >= 48 ? "free" : "blocked"}">${h >= 48 ? "frei" : "vor " + Math.round(h) + " Std."}</span></td>
+      <td>${when}</td>
       <td><button class="edit" data-i="${esc(t.artist)}" data-t="${esc(t.title)}" title="Notiz bearbeiten">✎</button></td>
     </tr>`;
   }).join("");
@@ -241,32 +276,33 @@ let editing = null;
 document.addEventListener("click", e => {
   const b = e.target.closest(".edit"); if (!b) return;
   editing = { artist: b.dataset.i, title: b.dataset.t };
-  const n = noteFor(editing.artist, editing.title);
+  const n = noteFor(editing);
   dlgTitle.textContent = editing.title; dlgArtist.textContent = editing.artist;
   eFit.value = n.fits_show; eFilm.value = n.film; eNote.value = n.note;
   dlg.showModal();
 });
 dlgCancel.onclick = () => dlg.close();
 dlgSave.onclick = () => {
-  pending[key(editing.artist, editing.title)] = { artist: editing.artist, title: editing.title,
+  const old = noteFor(editing);
+  pending[key(editing.artist, editing.title)] = { ...EMPTY, ...old, artist: old.artist || editing.artist, title: old.title || editing.title,
     fits_show: eFit.value.trim(), film: eFilm.value.trim(), note: eNote.value.trim().replace(/\s*\n\s*/g, " ") };
-  savePending(); dlg.close(); fillSelects(); render();
+  savePending(); dlg.close(); buildRows(); fillSelects(); render();
 };
 saveNotes.onclick = async () => {
   const all = new Map(notes); for (const [k, v] of Object.entries(pending)) all.set(k, v);
   const lines = [NOTE_COLS.join(",")];
-  for (const n of all.values()) if (n.fits_show || n.film || n.note) lines.push(NOTE_COLS.map(c => csvCell(n[c] || "")).join(","));
+  for (const n of all.values()) if (n.fits_show || n.film || n.note || n.lists) lines.push(NOTE_COLS.map(c => csvCell(n[c] || "")).join(","));
   const text = lines.join("\n") + "\n";
   try { await navigator.clipboard.writeText(text); } catch (e) { prompt("Bitte kopieren:", text); }
   window.open(REPO_EDIT, "_blank");
 };
-dropNotes.onclick = () => { if (confirm("Ungespeicherte Notizen verwerfen?")) { pending = {}; savePending(); fillSelects(); render(); } };
+dropNotes.onclick = () => { if (confirm("Ungespeicherte Notizen verwerfen?")) { pending = {}; savePending(); buildRows(); fillSelects(); render(); } };
 copyList.onclick = async () => {
   const text = filtered().map(t => `${t.artist} – ${t.title}`).join("\n");
   try { await navigator.clipboard.writeText(text); copyList.textContent = "Kopiert ✓"; setTimeout(() => copyList.textContent = "Liste kopieren", 1500); }
   catch (e) { prompt("Bitte kopieren:", text); }
 };
-for (const id of ["q", "fGenre", "fShow", "fFit", "fFree", "fFilm"]) document.getElementById(id).addEventListener("input", render);
+for (const id of ["q", "fGenre", "fShow", "fFit", "fFree", "fFilm", "fList", "fStatus"]) document.getElementById(id).addEventListener("input", render);
 for (const id of ["q2", "fShow2"]) document.getElementById(id).addEventListener("input", renderPlays);
 document.querySelectorAll("th[data-k]").forEach(th => th.onclick = () => {
   const k = th.dataset.k; sortDir = sortK === k ? -sortDir : (k === "plays" || k === "last_played_utc" ? -1 : 1); sortK = k; render(); });
