@@ -1,0 +1,38 @@
+name: Scrape playlist
+
+on:
+  workflow_dispatch:          # wird vom Weckdienst (cron-job.org) alle 15 Min. angestoßen
+  schedule:
+    - cron: "11,41 * * * *"   # Reserve, falls der Weckdienst ausfällt
+
+permissions:
+  contents: write
+
+concurrency:
+  group: scrape
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check out gh-pages (Webseite + Daten)
+        run: |
+          git fetch origin +refs/heads/gh-pages:refs/remotes/origin/gh-pages --depth=1
+          git worktree add -B gh-pages pages origin/gh-pages
+      - name: Scrape
+        env:
+          DATA_DIR: pages/data
+        run: |
+          cp site/index.html pages/index.html
+          touch pages/.nojekyll
+          python3 scripts/scrape.py
+      - name: Save
+        run: |
+          cd pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then echo "Nichts Neues."; exit 0; fi
+          git commit -m "Playlist aktualisiert"
+          for i in 1 2 3; do git pull --rebase origin gh-pages && git push origin gh-pages && break; sleep 5; done

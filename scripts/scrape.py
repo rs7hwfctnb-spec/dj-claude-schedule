@@ -1,0 +1,205 @@
+"""Scraper für Thinking Frequencies (läuft alle ~15 Min. per GitHub Actions).
+
+Quellen (öffentlich):
+  - Live365:    aktueller Titel + die letzten 8 Titel (mit Startzeit, Apple-Music-Link)
+  - Andon FM:   aktuelle Sendung (Name, Beschreibung, Start) + die nächsten Sendungen
+  - Apple:      Genre/Album pro Titel (iTunes Lookup, wird zwischengespeichert)
+
+Dateien (im Ordner DATA_DIR, im Workflow: Zweig gh-pages, Ordner data/):
+  plays.csv        jede gespielte Nummer (wird nur ergänzt)
+  blocks.csv       jede beobachtete Sendung mit Startzeit (wird nur ergänzt)
+  tracks.csv       pro Titel zusammengefasst (wird jedes Mal neu berechnet)
+  genre_cache.json Apple-Daten pro Titel
+  notes.csv        DEINE Notizen – wird vom Skript nie verändert
+"""
+import csv, json, os, re, sys, time, urllib.parse, urllib.request
+from datetime import datetime, timezone
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+DATA = Path(os.environ.get("DATA_DIR") or (ROOT / "docs" / "data"))
+LIVE365 = "https://api.live365.com/station/a46431"
+ANDON = "https://andonlabs.com/radio"
+STREAM_ID = "a46431"
+UA = {"User-Agent": "TF-Schedule listener tool (github.com/TF-Schedule/dj-claude-schedule)"}
+
+PLAYS = DATA / "plays.csv"
+BLOCKS = DATA / "blocks.csv"
+TRACKS = DATA / "tracks.csv"
+CACHE = DATA / "genre_cache.json"
+NOTES = DATA / "notes.csv"
+PLAY_COLS = ["start_utc", "artist", "title", "duration_s", "show", "apple_url"]
+BLOCK_COLS = ["start_utc", "show", "description"]
+TRACK_COLS = ["artist", "title", "plays", "last_played_utc", "shows", "genre", "album", "film_hint", "apple_url"]
+NOTE_COLS = ["artist", "title", "fits_show", "film", "note"]
+
+
+def get(url, timeout=20):
+    req = urllib.request.Request(url, headers=UA)
+    with urllib.request.urlopen(req, timeout=timeout) as r:
+        return r.read().decode("utf-8", "replace")
+
+
+def iso(ts):
+    """'2026-10-28 06:11:11.012+00:00' -> '2026-10-28T06:11:11Z'"""
+    ts = ts.strip().replace(" ", "T")
+    dt = datetime.fromisoformat(ts.replace("Z", "+00:00")).astimezone(timezone.utc)
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def read_csv(path, cols):
+    if not path.exists():
+        return []
+    with open(path, encoding="utf-8", newline="") as f:
+        return [{c: r.get(c, "") for c in cols} for r in csv.DictReader(f)]
+
+
+def write_csv(path, cols, rows):
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=cols, lineterminator="\n")
+        w.writeheader()
+        w.writerows(rows)
+
+
+def unesc(s):
+    return json.loads('"' + s + '"')
+
+
+def andon_blocks():
+    """Laufende + kommende Sendungen von Thinking Frequencies aus der Andon-Seite."""
+    html = get(ANDON)
+    i = html.find(f'streamUrl:"https://streaming.live365.com/{STREAM_ID}"')
+    if i < 0:
+        return []
+    part = html[i:]
+    part = part[:part.find("primaryModel")] if "primaryModel" in part else part[:20000]
+    q = r'"((?:[^"\\]|\\.)*)"'
+    pat = re.compile(r'\{name:' + q + r',description:' + q + r',imageUrl:[^,]*,startedAt:"([^"]+)"')
+    j = part.find("currentBlock:")
+    return [{"start_utc": iso(m.group(3)), "show": unesc(m.group(1)), "description": unesc(m.group(2))}
+            for m in pat.finditer(part[j:] if j >= 0 else part)]
+
+
+def live365_plays():
+    d = json.loads(get(LIVE365))
+    items = list(d.get("last-played") or [])
+    cur = d.get("current-track")
+    if cur and cur.get("title"):
+        items.append(cur)
+    plays = []
+    for t in items:
+        if not t.get("title") or not t.get("start"):
+            continue
+        plays.append({
+            "start_utc": iso(t["start"]),
+            "artist": (t.get("artist") or "").strip(),
+            "title": (t.get("title") or "").strip(),
+            "duration_s": str(round(float(t.get("duration") or 0))),
+            "show": "",
+            "apple_url": t.get("apple_music_url") or "",
+        })
+    return plays
+
+
+def apple_info(url, artist, title, cache):
+    key = f"{artist}|{title}"
+    if key in cache:
+        return cache[key]
+    info = {"genre": "", "album": "", "film_hint": ""}
+    try:
+        m = re.search(r"[?&]i=(\d+)", url or "")
+        if m:
+            res = json.loads(get(f"https://itunes.apple.com/lookup?id={m.group(1)}"))["results"]
+        else:
+            q = urllib.parse.quote(f"{artist} {title}")
+            res = json.loads(get(f"https://itunes.apple.com/search?term={q}&entity=song&limit=1"))["results"]
+        if res:
+            r = res[0]
+            info["genre"] = r.get("primaryGenreName", "")
+            info["album"] = r.get("collectionName", "")
+            alb = info["album"].lower()
+            if info["genre"].lower() == "soundtrack" or any(w in alb for w in ("soundtrack", "motion picture", "from the film", "from the movie", "o.s.t", " ost")):
+                info["film_hint"] = info["album"]
+        time.sleep(0.5)
+    except Exception as e:  # Apple nicht erreichbar -> später erneut versuchen
+        print("Apple-Lookup fehlgeschlagen:", key, e)
+        return info
+    cache[key] = info
+    return info
+
+
+def main():
+    DATA.mkdir(parents=True, exist_ok=True)
+    if not NOTES.exists():
+        write_csv(NOTES, NOTE_COLS, [])
+
+    # 1) Sendungen
+    blocks = read_csv(BLOCKS, BLOCK_COLS)
+    known_b = {(b["start_utc"], b["show"]) for b in blocks}
+    try:
+        for b in andon_blocks()[:1]:          # nur die laufende Sendung ist sicher
+            if (b["start_utc"], b["show"]) not in known_b:
+                blocks.append(b)
+                known_b.add((b["start_utc"], b["show"]))
+    except Exception as e:
+        print("Andon-Seite nicht lesbar:", e)
+    blocks.sort(key=lambda b: b["start_utc"])
+    write_csv(BLOCKS, BLOCK_COLS, blocks)
+
+    def show_at(ts):
+        s = ""
+        for b in blocks:
+            if b["start_utc"] <= ts:
+                s = b["show"]
+            else:
+                break
+        return s
+
+    # 2) Titel
+    plays = read_csv(PLAYS, PLAY_COLS)
+    known = {(p["start_utc"], p["artist"], p["title"]) for p in plays}
+    new = 0
+    for p in live365_plays():
+        k = (p["start_utc"], p["artist"], p["title"])
+        if k in known:
+            continue
+        p["show"] = show_at(p["start_utc"])
+        plays.append(p)
+        known.add(k)
+        new += 1
+    # Sendung nachtragen, falls sie beim ersten Sehen noch unbekannt war
+    for p in plays:
+        if not p["show"]:
+            p["show"] = show_at(p["start_utc"])
+    plays.sort(key=lambda p: p["start_utc"])
+    write_csv(PLAYS, PLAY_COLS, plays)
+
+    # 3) Pro Titel zusammenfassen + Genre
+    cache = json.loads(CACHE.read_text(encoding="utf-8")) if CACHE.exists() else {}
+    agg = {}
+    for p in plays:
+        k = (p["artist"], p["title"])
+        a = agg.setdefault(k, {"artist": p["artist"], "title": p["title"], "plays": 0, "last_played_utc": "", "shows": set(), "apple_url": ""})
+        a["plays"] += 1
+        a["last_played_utc"] = max(a["last_played_utc"], p["start_utc"])
+        if p["show"]:
+            a["shows"].add(p["show"])
+        a["apple_url"] = p["apple_url"] or a["apple_url"]
+    lookups = 0
+    rows = []
+    for (artist, title), a in agg.items():
+        info = cache.get(f"{artist}|{title}")
+        if info is None and lookups < 60:
+            info = apple_info(a["apple_url"], artist, title, cache)
+            lookups += 1
+        info = info or {"genre": "", "album": "", "film_hint": ""}
+        rows.append({**a, "shows": " · ".join(sorted(a["shows"])), **info})
+    rows.sort(key=lambda r: r["last_played_utc"], reverse=True)
+    write_csv(TRACKS, TRACK_COLS, rows)
+    CACHE.write_text(json.dumps(cache, ensure_ascii=False, indent=0, sort_keys=True), encoding="utf-8")
+    print(f"{new} neue Titel, {len(plays)} insgesamt, {len(rows)} verschiedene, {lookups} Apple-Abfragen")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
