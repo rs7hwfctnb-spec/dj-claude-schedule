@@ -113,7 +113,7 @@ def norm_key(artist, title):
     a = re.sub(r"\s+(feat\.?|featuring|ft\.)\s.*$", "", nfd(artist))
     a = re.sub(r"\s+(&|and|with)\s.*$", "", a)          # „Glenn Miller & His Orchestra“ = „Glenn Miller“
     a = re.sub(r"[^a-z0-9]+", " ", re.sub(r"^the\s+", "", a)).strip()
-    t = re.sub(r"\s*[\(\[][^\)\]]*[\)\]]", "", nfd(title))
+    t = re.sub(r"\s*[\(\[][^\)\]]*([\)\]]|$)", "", nfd(title))   # auch abgeschnittene Klammern („(Full Length Versio“)
     t = re.sub(r"\s+-\s+.*(remaster|version|live|mix|edit|mono|stereo).*$", "", t)
     t = re.sub(r"[^a-z0-9]+", " ", t).strip()
     t = re.sub(r"\s+(i|ii|iii|iv|v|vi|vii|viii|ix|x)$", "", t)   # Satznummern („Clair de Lune: I“)
@@ -258,7 +258,16 @@ def main():
         a["source"] = "Regal"
     # Kurts Liste dazunehmen: gleiche Titel zusammenführen, fehlende ergänzen
     by_norm = {norm_key(a["artist"], a["title"]): a for a in agg.values()}
+    kurt = {}   # Kurts Doppelungen (z. B. abgeschnittene Titel) zuerst zusammenfassen: Plays addieren, neuester Name gewinnt
     for k in kurt_rows():
+        nk = norm_key(k["artist"], k["title"])
+        if nk in kurt:
+            old_k = kurt[nk]
+            newer = k if k["last_played_utc"] > old_k["last_played_utc"] else old_k
+            kurt[nk] = {**newer, "plays": old_k["plays"] + k["plays"]}
+        else:
+            kurt[nk] = k
+    for k in kurt.values():
         a = by_norm.get(norm_key(k["artist"], k["title"]))
         if a:
             a["plays"] = max(a["plays"], k["plays"])
