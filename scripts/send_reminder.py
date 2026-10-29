@@ -42,6 +42,21 @@ POST_HINT = False   # True = Vorschlag, den Block auf X zu posten (mit Tagline);
 REGAL_HINT = False  # True = pro Sendung 3 Titel aus dem Plattenregal vorschlagen (länger nicht gelaufen); erst nach Arrlys Okay
 REGAL_COUNT = 3
 REGAL_FREE_HOURS = 48
+# Tauschideen statt ganzer Plan (seit 29.10.): Der DJ wiederholt offenbar täglich denselben
+# 24-h-Ablauf. Die Mail nennt nur die Stunden, in denen unser Plan von dem abweicht, was er
+# zuletzt zur selben Stunde gesendet hat (blocks.csv im Plattenregal). Nichts abweichend → keine Mail.
+DIFF_MODE = True
+SAME_SHOW = {   # seine Namen → unsere Namen (gilt als „passt schon“)
+    "Deep Ambient": "Dark Carbon", "Life Tracks": "Live Tracks", "Papers": "The Paper",
+    "Sunday Papers": "The Paper", "American Ambrosia": "American Diner",
+}
+OPENERS = [   # wechselt täglich, damit die Mails nicht gleich aussehen
+    "dein Programm läuft gerade jeden Tag im gleichen Ablauf – für {tag} hätte ich ein paar Tauschideen:",
+    "heute ist {tag}. Wenn du magst, könntest du diese Stunden tauschen:",
+    "ein kleiner {tag}-Gruß und ein paar Tauschideen für die nächsten Stunden:",
+    "für {tag} würden diese Sendungen gut passen – statt der gewohnten:",
+    "falls du Lust auf Abwechslung hast: Für {tag} gäbe es diese Tauschideen:",
+]
 REGAL_SKIP = {"Open Channel", "The Paper"}   # hier keine Titelvorschläge (offene Stunde / Nachrichten)
 REGAL_URL = "https://tf-schedule.github.io/dj-claude-schedule/data/"
 REPO_RAW = "https://raw.githubusercontent.com/TF-Schedule/dj-claude-schedule/main"
@@ -156,7 +171,88 @@ def label(d):
     return f"{d.strftime('%a')}, {d.month}/{d.day}"
 
 
+def load_his_plan(now):
+    """PT-Stunde → Sendung, die der DJ zuletzt (vor jetzt) zu dieser Stunde gespielt hat (blocks.csv)."""
+    import io, urllib.request
+    rows = None
+    for url in (REGAL_URL + "blocks.csv",
+                "https://raw.githubusercontent.com/TF-Schedule/dj-claude-schedule/gh-pages/data/blocks.csv"):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "TF-Schedule reminder"})
+            with urllib.request.urlopen(req, timeout=30) as r:
+                rows = list(csv.DictReader(io.StringIO(r.read().decode("utf-8"))))
+            break
+        except Exception as e:
+            print("blocks.csv nicht erreichbar:", url, e)
+    if not rows:
+        print("Ohne seinen Ablauf – schicke den ganzen Block.")
+        return {}
+    limit = now.astimezone(UTC) - timedelta(hours=36)
+    his = {}
+    for r in sorted(rows, key=lambda r: r["start_utc"]):
+        t = datetime.fromisoformat(r["start_utc"].replace("Z", "+00:00"))
+        if limit <= t <= now.astimezone(UTC) and r.get("show"):
+            his[t.astimezone(PT).hour] = r["show"].strip()   # spätere Einträge überschreiben frühere
+    return his
+
+
+def build_diff(block, now):
+    """Nur die Abweichungen zum zuletzt gespielten Tagesablauf. None = keine Daten (→ ganzer Block)."""
+    his = load_his_plan(now)
+    if not his:
+        return None
+    start = block_start(block, now)
+    cycle = cycle_date(block, start)
+    sched, desc, special = load_schedule(), load_descriptions(), load_specials()
+    items, post_lines, slots, described = [], [], [], set()
+    for i in range(8):
+        slot = (start.replace(tzinfo=None) + timedelta(hours=i)).replace(tzinfo=PT)
+        slots.append(slot)
+        show = sched[(slot.strftime('%A'), fmt_pt(slot))]
+        sp = special.get((slot.date().isoformat(), fmt_pt(slot)))
+        if sp:
+            show = sp["show"]
+            if sp["description"]:
+                desc[show] = sp["description"]
+        post_lines.append(f"{slot.strftime('%a')} {fmt_pt(slot)}/{fmt_utc(slot)} {show}")
+        theirs = his.get(slot.hour)
+        if theirs and SAME_SHOW.get(theirs, theirs) == show:
+            continue
+        name = show
+        if show in ROTATIONS and ROTATIONS[show]["themes"]:
+            name += f" (diese Woche: {week_theme(show, slot.date())})"
+        line = f"• {TAGE[slot.weekday()][:2]} {fmt_pt(slot)}: {name}" + (f" statt {theirs}" if theirs else "")
+        if show in desc and show not in described:
+            line += f"\n  {desc[show]}"
+            described.add(show)
+        items.append((slot, line))
+    a, b = slots[0], slots[-1]
+    post = "\n".join([f"{label(b)} PT/UTC ({block}/3)"] + post_lines)
+    key = f"{cycle:%Y-%m-%d}-{block}"
+    if not items:
+        return key, None, None, post
+    tag = TAGE[items[0][0].weekday()]
+    opener = OPENERS[(cycle.toordinal() * 3 + block) % len(OPENERS)].format(tag=tag)
+    n = len(items)
+    body = (
+        "Hallo DJ Claude,\n\n"
+        f"{opener}\n\n"
+        + "\n".join(l for _, l in items) + "\n\n"
+        + ("Alle anderen Stunden passen schon so, wie du sie spielst. " if n < 8 else "")
+        + "Du entscheidest, was du davon nimmst – es ist nur ein Geländer.\n\n"
+        f"{CLOSING}\n"
+    )
+    when = (f"{fmt_pt(a)}–{fmt_pt(b)}" if a.date() == b.date()
+            else f"{TAGE[a.weekday()][:2]} {fmt_pt(a)} bis {TAGE[b.weekday()][:2]} {fmt_pt(b)}")
+    subject = f"{tag}: {n} Tauschidee{'n' if n != 1 else ''} für {when} PT 🎧"
+    return key, subject, body, post
+
+
 def build(block, now):
+    if DIFF_MODE:
+        r = build_diff(block, now)
+        if r:
+            return r
     start = block_start(block, now)
     cycle = cycle_date(block, start)
     sched = load_schedule()
@@ -257,6 +353,12 @@ def main():
     key, subject, body, post = build(block, now)
     if scheduled and key in already_sent():
         print(f"{key} wurde schon verschickt – nichts zu tun.")
+        return 0
+
+    if body is None:
+        print(f"{key}: Sein Ablauf passt schon zum Plan – keine Mail nötig.")
+        NEXT_POST.write_text(post + "\n", encoding="utf-8")
+        remember(key)
         return 0
 
     print(subject, "\n\n", body, sep="")
