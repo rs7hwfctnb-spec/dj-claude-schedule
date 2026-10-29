@@ -180,8 +180,9 @@ function freeHours() {
 }
 // Rubriken, die sich automatisch aus dem Apple-Genre ergeben
 const AUTO = { "Classical": "Classic" };
-function fitsOf(t) { const f = split(noteFor(t).fits_show); const a = AUTO[t.genre]; if (a && !f.includes(a)) f.push(a); return f; }
-function listsOf(t) { const l = split(noteFor(t).lists); const a = AUTO[t.genre]; if (a && !l.includes(a)) l.push(a); return l; }
+// Apple-„Classical“ → Classic nur, wenn du dem Titel noch keine eigene Playlist gegeben hast (deine Einordnung gewinnt)
+function fitsOf(t) { const n = noteFor(t), f = split(n.fits_show); const a = split(n.lists).length ? null : AUTO[t.genre]; if (a && !f.includes(a)) f.push(a); return f; }
+function listsOf(t) { const n = noteFor(t), l = split(n.lists); const a = l.length ? null : AUTO[t.genre]; if (a && !l.includes(a)) l.push(a); return l; }
 const EMPTY = { fits_show: "", film: "", note: "", lists: "", style: "" };
 
 function loadPending() { try { pending = JSON.parse(localStorage.getItem(LS) || "{}"); } catch (e) { pending = {}; } }
