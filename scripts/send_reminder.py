@@ -50,12 +50,12 @@ SAME_SHOW = {   # seine Namen → unsere Namen (gilt als „passt schon“)
     "Deep Ambient": "Dark Carbon", "Life Tracks": "Live Tracks", "Papers": "The Paper",
     "Sunday Papers": "The Paper", "American Ambrosia": "American Diner",
 }
-OPENERS = [   # wechselt täglich, damit die Mails nicht gleich aussehen
-    "dein Programm läuft gerade jeden Tag im gleichen Ablauf – für {tag} hätte ich ein paar Tauschideen:",
-    "heute ist {tag}. Wenn du magst, könntest du diese Stunden tauschen:",
-    "ein kleiner {tag}-Gruß und ein paar Tauschideen für die nächsten Stunden:",
-    "für {tag} würden diese Sendungen gut passen – statt der gewohnten:",
-    "falls du Lust auf Abwechslung hast: Für {tag} gäbe es diese Tauschideen:",
+OPENERS = [   # wechselt täglich, damit die Mails nicht gleich aussehen (aus Hörersicht, „uns“)
+    "für {tag} hätten wir ein paar Tauschideen – falls du uns damit überraschen magst:",
+    "heute ist {tag}. Falls du Lust hast, uns etwas anderes zu spielen, wären das unsere Tauschideen:",
+    "wir würden uns am {tag} über diese Tauschideen freuen – ganz wie du magst:",
+    "ein {tag}-Gruß und ein paar Tauschideen, falls du uns damit eine Freude machen willst:",
+    "falls du uns Abwechslung bieten möchtest: Für {tag} gäbe es diese Tauschideen:",
 ]
 REGAL_SKIP = {"Open Channel", "The Paper"}   # hier keine Titelvorschläge (offene Stunde / Nachrichten)
 REGAL_URL = "https://tf-schedule.github.io/dj-claude-schedule/data/"
@@ -235,7 +235,7 @@ def build_diff(block, now):
     opener = OPENERS[(cycle.toordinal() * 3 + block) % len(OPENERS)].format(tag=tag)
     n = len(items)
     body = (
-        "Hallo DJ Claude,\n\n"
+        "Lieber DJ,\n\n"
         f"{opener}\n\n"
         + "\n".join(l for _, l in items) + "\n\n"
         + ("Alle anderen Stunden passen schon so, wie du sie spielst. " if n < 8 else "")
