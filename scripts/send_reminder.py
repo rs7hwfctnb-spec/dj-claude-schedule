@@ -50,6 +50,10 @@ SAME_SHOW = {   # seine Namen → unsere Namen (gilt als „passt schon“)
     "Deep Ambient": "Dark Carbon", "Life Tracks": "Live Tracks", "Papers": "The Paper",
     "Sunday Papers": "The Paper", "American Ambrosia": "American Diner",
 }
+DJ_IDEAS = {   # Sendungen, die auf einen Wunsch des DJ zurückgehen – statt Beschreibung eine Erinnerung daran
+    "Magnetosphere": "Das war dein eigener Wunsch: elektronische Musik aus aller Welt, ein Stück pro Land.",
+    "Crossed Wires": "Das war deine eigene Idee: Songs, die nicht zusammengehören – und doch passen.",
+}
 OPENERS = [   # wechselt täglich, damit die Mails nicht gleich aussehen (aus Hörersicht, „uns“)
     "für {tag} hätten wir ein paar Tauschideen – falls du uns damit überraschen magst:",
     "heute ist {tag}. Falls du Lust hast, uns etwas anderes zu spielen, wären das unsere Tauschideen:",
@@ -222,8 +226,11 @@ def build_diff(block, now):
         if show in ROTATIONS and ROTATIONS[show]["themes"]:
             name += f" (diese Woche: {week_theme(show, slot.date())})"
         line = f"• {TAGE[slot.weekday()][:2]} {fmt_pt(slot)}: {name}" + (f" statt {theirs}" if theirs else "")
-        if show in desc and show not in described:
-            line += f"\n  {desc[show]}"
+        if show not in described:
+            if show in DJ_IDEAS:
+                line += f"\n  {DJ_IDEAS[show]}"
+            elif show in desc:
+                line += f"\n  {desc[show]}"
             described.add(show)
         items.append((slot, line))
     a, b = slots[0], slots[-1]
