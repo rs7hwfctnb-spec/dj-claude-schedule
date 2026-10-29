@@ -31,6 +31,7 @@
   .btn { border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 7px 12px; border-radius: 8px; font: inherit; cursor: pointer; }
   .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
   .count { color: var(--muted); font-size: 13px; }
+  .chip.mine { background: var(--accent-soft); border: 1px solid var(--accent); }
   .pending { background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 10px; padding: 10px 12px; margin: 10px 0; display: none; }
   .tablewrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: 12px; }
   table { border-collapse: collapse; width: 100%; min-width: 860px; }
@@ -83,11 +84,12 @@
         <input id="fFreeCustom" type="number" min="1" step="1" placeholder="Stunden" style="display:none;margin-top:4px"></label>
       <label>Nur mit Film<select id="fFilm"><option value="">egal</option><option value="1">ja</option></select></label>
       <label>Playlist<select id="fList"><option value="">alle</option></select></label>
-      <label>Status<select id="fStatus"><option value="">alle</option><option value="played">schon gelaufen</option><option value="new">noch nicht gelaufen</option></select></label>
+      <label>Status<select id="fStatus"><option value="">alle</option><option value="played">schon gelaufen</option><option value="new">noch nicht gelaufen</option><option value="mine">meine offenen Änderungen</option></select></label>
     </div>
     <div class="pending" id="pending">
       <b id="pendingN"></b> – noch nicht auf GitHub gespeichert.
       <div class="help" id="pendingList"></div>
+      <div class="help">Tipp: Status → „meine offenen Änderungen“ zeigt nur diese Titel in der Liste.</div>
       <div class="row">
         <button class="btn primary" id="saveNotes">Notizen übernehmen</button>
         <button class="btn" id="dropNotes">Verwerfen</button>
@@ -248,6 +250,7 @@ function filtered() {
     if (li && !listsOf(t).includes(li)) return false;
     if (st === "played" && t.unplayed) return false;
     if (st === "new" && !t.unplayed) return false;
+    if (st === "mine" && !pending[key(t.artist, t.title)]) return false;
     if (free && hoursSince(t.last_played_utc) < free) return false;
     if (film && !(n.film || t.film_hint)) return false;
     if (q && ![t.artist, t.title, t.genre, t.shows, t.album, n.fits_show, n.film, n.note, n.lists, n.style].join(" ").toLowerCase().includes(q)) return false;
@@ -270,7 +273,7 @@ function render() {
     const when = t.unplayed ? `<span class="new">noch nicht gelaufen</span>`
       : `${fmt(t.last_played_utc)}<br><span class="${h >= (freeHours() || 36) ? "free" : "blocked"}">${h >= (freeHours() || 36) ? "frei" : "vor " + Math.round(h) + " Std."}</span>${t.source === "Kurt" ? `<div class="new">laut Kurts Liste</div>` : ""}`;
     return `<tr>
-      <td><div class="tt">${cover(t.artwork)}<div><div class="t">${esc(t.title)}</div><div class="a">${esc(t.artist)}</div>
+      <td><div class="tt">${cover(t.artwork)}<div><div class="t">${esc(t.title)}</div><div class="a">${esc(t.artist)}</div>${pending[key(t.artist, t.title)] ? `<span class="chip mine">✎ deine Änderung, noch nicht gespeichert</span>` : ""}
         ${listsOf(t).map(s => `<span class="chip list">${esc(s)}</span>`).join("")}</div></div></td>
       <td>${esc(t.genre)}${n.style ? `<div class="style">${esc(n.style)}</div>` : ""}</td>
       <td>${split(t.shows).map(s => `<span class="chip">${esc(s)}</span>`).join("")}</td>
