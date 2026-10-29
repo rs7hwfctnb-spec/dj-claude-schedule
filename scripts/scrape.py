@@ -104,7 +104,8 @@ def live365_plays():
 
 
 def nfd(s):
-    return unicodedata.normalize("NFD", s).encode("ascii", "ignore").decode().lower()
+    """Wie auf der Webseite: Akzente weg, andere Sonderzeichen (z. B. ’) werden später zu Leerzeichen."""
+    return "".join(c for c in unicodedata.normalize("NFD", s) if not unicodedata.combining(c)).lower()
 
 
 def norm_key(artist, title):
@@ -115,6 +116,7 @@ def norm_key(artist, title):
     t = re.sub(r"\s*[\(\[][^\)\]]*[\)\]]", "", nfd(title))
     t = re.sub(r"\s+-\s+.*(remaster|version|live|mix|edit|mono|stereo).*$", "", t)
     t = re.sub(r"[^a-z0-9]+", " ", t).strip()
+    t = re.sub(r"\s+(i|ii|iii|iv|v|vi|vii|viii|ix|x)$", "", t)   # Satznummern („Clair de Lune: I“)
     return a + "|" + t
 
 
