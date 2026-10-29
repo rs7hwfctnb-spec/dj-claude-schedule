@@ -195,6 +195,10 @@ async function load() {
   plays = p.reverse();
   notes = new Map(n.map(r => [key(r.artist, r.title), { ...EMPTY, ...r }]));
   loadPending();
+  for (const [k, m] of Object.entries(pending)) {    // alte Schlüssel (frühere Zuordnungsregeln) auf die aktuellen umstellen
+    const nk = m.artist && m.title ? key(m.artist, m.title) : k;
+    if (nk !== k) { if (!pending[nk]) pending[nk] = m; delete pending[k]; }
+  }
   for (const k of Object.keys(pending)) {           // schon auf GitHub angekommen? -> nicht mehr ausstehend
     const s = notes.get(k), m = pending[k];
     if (s && s.fits_show === m.fits_show && s.film === m.film && s.note === m.note) delete pending[k];
