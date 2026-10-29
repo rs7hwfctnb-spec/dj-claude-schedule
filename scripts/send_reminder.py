@@ -208,6 +208,7 @@ def build_diff(block, now):
     start = block_start(block, now)
     cycle = cycle_date(block, start)
     sched, desc, special = load_schedule(), load_descriptions(), load_specials()
+    known = set(sched.values()) | set(desc) | {sp["show"] for sp in special.values()}   # alle Namen aus unserem Plan
     items, post_lines, slots, described = [], [], [], set()
     for i in range(8):
         slot = (start.replace(tzinfo=None) + timedelta(hours=i)).replace(tzinfo=PT)
@@ -222,6 +223,8 @@ def build_diff(block, now):
         theirs = his.get(slot.hour)
         if theirs and SAME_SHOW.get(theirs, theirs) == show:
             continue
+        if theirs and SAME_SHOW.get(theirs, theirs) not in known:
+            continue        # seine eigene Sendung (z. B. Crossfade Cabinet) – als gegeben nehmen, nicht wegtauschen
         name = show
         if show in ROTATIONS and ROTATIONS[show]["themes"]:
             name += f" (diese Woche: {week_theme(show, slot.date())})"
