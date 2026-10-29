@@ -87,6 +87,7 @@
     </div>
     <div class="pending" id="pending">
       <b id="pendingN"></b> – noch nicht auf GitHub gespeichert.
+      <div class="help" id="pendingList"></div>
       <div class="row">
         <button class="btn primary" id="saveNotes">Notizen übernehmen</button>
         <button class="btn" id="dropNotes">Verwerfen</button>
@@ -284,6 +285,12 @@ function render() {
   const np = Object.keys(pending).length, box = document.getElementById("pending");
   box.style.display = np ? "block" : "none";
   document.getElementById("pendingN").textContent = np === 1 ? "1 Notiz geändert" : `${np} Notizen geändert`;
+  document.getElementById("pendingList").innerHTML = Object.entries(pending).map(([k, m]) => {   // welche Titel, und was auf GitHub steht
+    const s = notes.get(k) || EMPTY, d = [];
+    for (const [f, n] of [["fits_show", "Passt zu"], ["film", "Film"], ["note", "Notiz"]])
+      if ((m[f] || "") !== (s[f] || "")) d.push(`${n}: <i>${esc(m[f] || "–")}</i> (GitHub: ${esc(s[f] || "–")})`);
+    return `• <b>${esc(m.artist || "")} – ${esc(m.title || "")}</b>${d.length ? "<br>&nbsp;&nbsp;" + d.join("<br>&nbsp;&nbsp;") : ""}`;
+  }).join("<br>");
 }
 
 function renderPlays() {
