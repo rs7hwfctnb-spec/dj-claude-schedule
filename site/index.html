@@ -55,6 +55,14 @@
   .style { color: var(--muted); font-size: 12px; }
   .blocked { color: var(--blocked); font-size: 12px; }
   .note { font-size: 13px; }
+  .more { border: none; background: none; cursor: pointer; color: var(--muted); font-size: 12px; padding: 2px 0; margin-top: 2px; }
+  .more:hover { color: var(--link); }
+  tr.detail td { background: var(--accent-soft); border-bottom: 1px solid var(--line); font-size: 13px; }
+  .detail h4 { margin: 0 0 4px; font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+  .detail .cols { display: flex; flex-wrap: wrap; gap: 18px 32px; }
+  .detail .cols > div { min-width: 220px; flex: 1; }
+  .detail ol { margin: 0; padding-left: 18px; }
+  .lastshow { font-size: 12px; margin-top: 2px; }
   .edit { border: none; background: none; cursor: pointer; font-size: 16px; color: var(--muted); }
   dialog { border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--ink); width: min(520px, 94vw); padding: 18px; }
   dialog::backdrop { background: rgba(0,0,0,.35); }
@@ -107,7 +115,7 @@
     </div>
     <div class="tablewrap"><table>
       <thead><tr>
-        <th data-k="title">Titel</th><th data-k="genre">Genre</th><th data-k="shows">Gelaufen in</th>
+        <th data-k="title">Titel</th><th data-k="genre">Genre</th>
         <th data-k="fits_show">Passt zu</th><th data-k="film">Film</th><th data-k="note">Notiz</th>
         <th data-k="plays">Plays</th><th data-k="last_played_utc">Zuletzt</th><th></th>
       </tr></thead>
@@ -219,7 +227,7 @@ async function load() {
 }
 
 // Cover von Apple: klein in der Liste, Tippen öffnet es groß
-let artMap = new Map();
+let artMap = new Map(), playsBy = new Map(), openRows = new Set();
 function cover(url) {
   if (!url) return `<span class="cover none">♪</span>`;
   const small = url.replace(/\/\d+x\d+bb\./, "/120x120bb."), big = url.replace(/\/\d+x\d+bb\./, "/600x600bb.");
@@ -228,6 +236,8 @@ function cover(url) {
 
 function buildRows() {
   artMap = new Map(tracks.filter(t => t.artwork).map(t => [key(t.artist, t.title), t.artwork]));
+  playsBy = new Map();                                      // eigener Verlauf je Titel, neueste zuerst
+  for (const p of plays) { const k = key(p.artist, p.title); if (!playsBy.has(k)) playsBy.set(k, []); playsBy.get(k).push(p); }
   const seen = new Set();
   rows = tracks.map(t => { seen.add(key(t.artist, t.title)); return t; });
   for (const [k, n] of [...notes.entries(), ...Object.entries(pending)]) {
@@ -276,24 +286,27 @@ function render() {
   const list = filtered();
   document.getElementById("count").textContent = `${list.length} Titel`;
   const tb = document.getElementById("tbody");
-  if (!list.length) { tb.innerHTML = `<tr><td colspan="9" class="empty">Keine Titel für diese Auswahl.</td></tr>`; }
+  if (!list.length) { tb.innerHTML = `<tr><td colspan="8" class="empty">Keine Titel für diese Auswahl.</td></tr>`; }
   else tb.innerHTML = list.slice(0, 2000).map(t => {
-    const n = noteFor(t), h = hoursSince(t.last_played_utc);
-    const film = n.film || t.film_hint;
+    const n = noteFor(t), h = hoursSince(t.last_played_utc), k = key(t.artist, t.title);
+    const film = n.film || t.film_hint, mine = playsBy.get(k) || [];
+    const lastShow = (mine[0] && mine[0].show) || split(t.shows).slice(-1)[0] || "";
+    const others = new Set(mine.map(p => p.show).filter(x => x && x !== lastShow)).size;
     const when = t.unplayed ? `<span class="new">noch nicht gelaufen</span>`
-      : `${fmt(t.last_played_utc)}<br><span class="${h >= (freeHours() || 36) ? "free" : "blocked"}">${h >= (freeHours() || 36) ? "frei" : "vor " + Math.round(h) + " Std."}</span>${t.source === "Kurt" ? `<div class="new">laut Kurts Liste</div>` : ""}`;
+      : `${fmt(t.last_played_utc)}${lastShow ? `<div class="lastshow"><span class="chip">${esc(lastShow)}</span>${others ? ` <span class="new">+${others}</span>` : ""}</div>` : ""}<span class="${h >= (freeHours() || 36) ? "free" : "blocked"}">${h >= (freeHours() || 36) ? "frei" : "vor " + Math.round(h) + " Std."}</span>${t.source === "Kurt" ? `<div class="new">laut Kurts Liste</div>` : ""}`;
+    const open = openRows.has(k);
     return `<tr>
-      <td><div class="tt">${cover(t.artwork)}<div><div class="t">${esc(t.title)}</div><div class="a">${esc(t.artist)}</div>${pending[key(t.artist, t.title)] ? `<span class="chip mine">✎ deine Änderung, noch nicht gespeichert</span>` : ""}
-        ${listsOf(t).map(s => `<span class="chip list">${esc(s)}</span>`).join("")}</div></div></td>
+      <td><div class="tt">${cover(t.artwork)}<div><div class="t">${esc(t.title)}</div><div class="a">${esc(t.artist)}</div>${pending[k] ? `<span class="chip mine">✎ deine Änderung, noch nicht gespeichert</span>` : ""}
+        ${listsOf(t).map(s => `<span class="chip list">${esc(s)}</span>`).join("")}
+        <div><button class="more" data-k="${esc(k)}" aria-expanded="${open}">${open ? "▾ weniger" : "▸ Details"}</button></div></div></div></td>
       <td>${esc(t.genre)}${n.style ? `<div class="style">${esc(n.style)}</div>` : ""}</td>
-      <td>${split(t.shows).map(s => `<span class="chip">${esc(s)}</span>`).join("")}</td>
       <td>${fitsOf(t).map(s => `<span class="chip fit">${esc(s)}</span>`).join("")}</td>
       <td class="note">${esc(film)}</td>
       <td class="note">${esc(n.note)}</td>
       <td>${t.plays}</td>
       <td>${when}</td>
       <td><button class="edit" data-i="${esc(t.artist)}" data-t="${esc(t.title)}" title="Notiz bearbeiten">✎</button></td>
-    </tr>`;
+    </tr>${open ? detailRow(t, n, mine, film) : ""}`;
   }).join("");
   const np = Object.keys(pending).length, box = document.getElementById("pending");
   box.style.display = np ? "block" : "none";
@@ -305,6 +318,26 @@ function render() {
     return `• <b>${esc(m.artist || "")} – ${esc(m.title || "")}</b>${d.length ? "<br>&nbsp;&nbsp;" + d.join("<br>&nbsp;&nbsp;") : ""}`;
   }).join("<br>");
 }
+
+function detailRow(t, n, mine, film) {
+  const hist = mine.length
+    ? `<ol>${mine.map(p => `<li>${fmt(p.start_utc)}${p.show ? ` · ${esc(p.show)}` : ""}</li>`).join("")}</ol>`
+    : `<div class="new">Noch kein eigener Verlauf (wir zeichnen seit 28.10.2026 auf).</div>`;
+  const kurt = t.source !== "Regal" && !t.unplayed ? `<div class="new" style="margin-top:4px">Insgesamt ${t.plays} Plays (inkl. Kurts Liste, der weiter zurückreicht).</div>` : "";
+  const apple = t.apple_url ? `<div style="margin-top:6px"><a href="${esc(t.apple_url)}" target="_blank" rel="noopener">Bei Apple Music ansehen</a></div>` : "";
+  return `<tr class="detail"><td colspan="8"><div class="cols">
+    <div><h4>Verlauf</h4>${hist}${kurt}</div>
+    <div><h4>Notiz</h4>${n.note ? esc(n.note) : `<span class="new">–</span>`}
+      ${film ? `<div style="margin-top:6px"><b>Film:</b> ${esc(film)}</div>` : ""}
+      ${n.style ? `<div style="margin-top:6px"><b>Stil:</b> ${esc(n.style)}</div>` : ""}
+      ${t.album ? `<div style="margin-top:6px"><b>Album:</b> ${esc(t.album)}</div>` : ""}${apple}</div>
+  </div></td></tr>`;
+}
+
+document.addEventListener("click", e => {
+  const b = e.target.closest(".more"); if (!b) return;
+  const k = b.dataset.k; openRows.has(k) ? openRows.delete(k) : openRows.add(k); render();
+});
 
 function renderPlays() {
   const q = document.getElementById("q2").value.toLowerCase().trim(), sh = fShow2.value;
