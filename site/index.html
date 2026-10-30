@@ -147,6 +147,11 @@
   <label>Passt zu Sendung(en)</label>
   <div id="fitChips" class="fitchips"></div>
   <select id="fitAdd" aria-label="Sendung hinzufügen"></select>
+  <div class="row" style="gap:8px">
+    <label style="flex:1">Genre <select id="eGenre"></select></label>
+    <label style="flex:1">Stil <input id="eStyle" placeholder="z. B. Easy-Listening / Kwela"></label>
+  </div>
+  <div class="new" id="eGenreApple"></div>
   <label>Film <input id="eFilm" placeholder="z. B. Spiel mir das Lied vom Tod"></label>
   <label>Notiz <textarea id="eNote" rows="3"></textarea></label>
   <div class="row" style="justify-content:flex-end">
@@ -157,7 +162,7 @@
 
 <script>
 const REPO_EDIT = "https://github.com/TF-Schedule/dj-claude-schedule/edit/gh-pages/data/notes.csv";
-const NOTE_COLS = ["artist", "title", "fits_show", "film", "note", "lists", "style"];
+const NOTE_COLS = ["artist", "title", "fits_show", "film", "note", "lists", "style", "genre"];
 const LS = "tf_pending_notes_v2";
 let tracks = [], rows = [], plays = [], notes = new Map(), pending = {}, sortK = "last_played_utc", sortDir = -1;
 
@@ -200,10 +205,12 @@ function freeHours() {
 }
 // Rubriken, die sich automatisch aus dem Apple-Genre ergeben
 const AUTO = { "Classical": "Classic" };
+// dein Genre (im Bearbeiten-Fenster) ersetzt Apples Angabe überall; leer = Apples Genre
+const genreOf = t => noteFor(t).genre || t.genre || "";
 // Apple-„Classical“ → Classic nur, wenn du dem Titel noch keine eigene Playlist gegeben hast (deine Einordnung gewinnt)
-function fitsOf(t) { const n = noteFor(t), f = split(n.fits_show); const a = split(n.lists).length ? null : AUTO[t.genre]; if (a && !f.includes(a)) f.push(a); return f; }
-function listsOf(t) { const n = noteFor(t), l = split(n.lists); const a = l.length ? null : AUTO[t.genre]; if (a && !l.includes(a)) l.push(a); return l; }
-const EMPTY = { fits_show: "", film: "", note: "", lists: "", style: "" };
+function fitsOf(t) { const n = noteFor(t), f = split(n.fits_show); const a = split(n.lists).length ? null : AUTO[genreOf(t)]; if (a && !f.includes(a)) f.push(a); return f; }
+function listsOf(t) { const n = noteFor(t), l = split(n.lists); const a = l.length ? null : AUTO[genreOf(t)]; if (a && !l.includes(a)) l.push(a); return l; }
+const EMPTY = { fits_show: "", film: "", note: "", lists: "", style: "", genre: "" };
 
 function loadPending() { try { pending = JSON.parse(localStorage.getItem(LS) || "{}"); } catch (e) { pending = {}; } }
 function savePending() { try { localStorage.setItem(LS, JSON.stringify(pending)); } catch (e) {} }
@@ -222,7 +229,7 @@ async function load() {
   }
   for (const k of Object.keys(pending)) {           // schon auf GitHub angekommen? -> nicht mehr ausstehend
     const s = notes.get(k), m = pending[k];
-    if (s && s.fits_show === m.fits_show && s.film === m.film && s.note === m.note) delete pending[k];
+    if (s && s.fits_show === m.fits_show && s.film === m.film && s.note === m.note && (s.genre || "") === (m.genre || "") && (s.style || "") === (m.style || "")) delete pending[k];
   }
   savePending();
   buildRows();
@@ -258,7 +265,8 @@ function fillSelects() {
   const opts = (id, vals) => { const s = document.getElementById(id), cur = s.value;
     s.innerHTML = '<option value="">alle</option>' + vals.map(v => `<option>${esc(v)}</option>`).join(""); s.value = cur; };
   const shows = uniq(tracks.flatMap(t => split(t.shows)));
-  opts("fGenre", uniq(tracks.map(t => t.genre)));
+  opts("fGenre", uniq(rows.map(genreOf)));
+  genreNames = uniq([...tracks.map(t => t.genre), ...rows.map(genreOf)]);
   opts("fShow", shows); opts("fShow2", uniq(plays.map(p => p.show)));
   const fits = uniq(rows.flatMap(t => fitsOf(t)));
   opts("fFit", fits);
@@ -271,7 +279,7 @@ function filtered() {
   const g = fGenre.value, sh = fShow.value, fit = fFit.value, free = freeHours(), film = fFilm.value, li = fList.value, st = fStatus.value;
   return rows.filter(t => {
     const n = noteFor(t);
-    if (g && t.genre !== g) return false;
+    if (g && genreOf(t) !== g) return false;
     if (sh && !split(t.shows).includes(sh)) return false;
     if (fit && !fitsOf(t).includes(fit)) return false;
     if (li && !listsOf(t).includes(li)) return false;
@@ -280,11 +288,11 @@ function filtered() {
     if (st === "mine" && !pending[key(t.artist, t.title)]) return false;
     if (free && hoursSince(t.last_played_utc) < free) return false;
     if (film && !(n.film || t.film_hint)) return false;
-    if (q && ![t.artist, t.title, t.genre, t.shows, t.album, n.fits_show, n.film, n.note, n.lists, n.style].join(" ").toLowerCase().includes(q)) return false;
+    if (q && ![t.artist, t.title, genreOf(t), t.genre, t.shows, t.album, n.fits_show, n.film, n.note, n.lists, n.style].join(" ").toLowerCase().includes(q)) return false;
     return true;
   }).sort((a, b) => {
-    const va = sortK in a ? a[sortK] : noteFor(a)[sortK] || "";
-    const vb = sortK in b ? b[sortK] : noteFor(b)[sortK] || "";
+    const val = x => sortK === "genre" ? genreOf(x) : sortK in x ? x[sortK] : noteFor(x)[sortK] || "";
+    const va = val(a), vb = val(b);
     if (typeof va === "number") return (va - vb) * sortDir;
     return sortName(va).localeCompare(sortName(vb), "de") * sortDir;
   });
@@ -307,7 +315,7 @@ function render() {
       <td><div class="tt">${cover(t.artwork)}<div><div class="t">${esc(t.title)}</div><div class="a">${esc(t.artist)}</div>${pending[k] ? `<span class="chip mine">✎ deine Änderung, noch nicht gespeichert</span>` : ""}
         ${listsOf(t).map(s => `<span class="chip list">${esc(s)}</span>`).join("")}
         <div><button class="more" data-k="${esc(k)}" aria-expanded="${open}">${open ? "▾ weniger" : "▸ Details"}</button></div></div></div></td>
-      <td>${esc(t.genre)}${n.style ? `<div class="style">${esc(n.style)}</div>` : ""}</td>
+      <td>${esc(genreOf(t))}${n.genre && t.genre && n.genre !== t.genre ? `<div class="new">Apple: ${esc(t.genre)}</div>` : ""}${n.style ? `<div class="style">${esc(n.style)}</div>` : ""}</td>
       <td class="note">${esc(film)}</td>
       <td class="note">${esc(n.note)}</td>
       <td>${fitsOf(t).map(s => `<span class="chip fit">${esc(s)}</span>`).join("")}</td>
@@ -321,7 +329,7 @@ function render() {
   document.getElementById("pendingN").textContent = np === 1 ? "1 Notiz geändert" : `${np} Notizen geändert`;
   document.getElementById("pendingList").innerHTML = Object.entries(pending).map(([k, m]) => {   // welche Titel, und was auf GitHub steht
     const s = notes.get(k) || EMPTY, d = [];
-    for (const [f, n] of [["fits_show", "Passt zu"], ["film", "Film"], ["note", "Notiz"]])
+    for (const [f, n] of [["fits_show", "Passt zu"], ["genre", "Genre"], ["style", "Stil"], ["film", "Film"], ["note", "Notiz"]])
       if ((m[f] || "") !== (s[f] || "")) d.push(`${n}: <i>${esc(m[f] || "–")}</i> (GitHub: ${esc(s[f] || "–")})`);
     return `• <b>${esc(m.artist || "")} – ${esc(m.title || "")}</b>${d.length ? "<br>&nbsp;&nbsp;" + d.join("<br>&nbsp;&nbsp;") : ""}`;
   }).join("<br>");
@@ -357,7 +365,7 @@ function renderPlays() {
     `<tr><td colspan="3" class="empty">Noch keine Daten.</td></tr>`;
 }
 
-let editing = null, fitSel = [], showNames = [];
+let editing = null, fitSel = [], showNames = [], genreNames = [];
 // „Passt zu“ per Auswahl: jede Sendung einzeln hinzufügen, mit × wieder entfernen – kein Tippen, keine Kommafehler
 function drawFits() {
   fitChips.innerHTML = fitSel.length
@@ -373,22 +381,37 @@ fitAdd.onchange = () => {
   if (v && !fitSel.includes(v)) fitSel.push(v);
   drawFits();
 };
+function drawGenre(cur, apple) {
+  const names = genreNames.includes(cur) || !cur ? genreNames : [...genreNames, cur];
+  eGenre.innerHTML = `<option value="">wie Apple${apple ? ` (${esc(apple)})` : ""}</option>` +
+    names.map(g => `<option${g === cur ? " selected" : ""}>${esc(g)}</option>`).join("") + `<option value="__other">✎ anderes …</option>`;
+  eGenre.value = cur || "";
+  eGenreApple.textContent = apple ? `Apple sagt: ${apple}` : "";
+}
+eGenre.onchange = () => {
+  if (eGenre.value !== "__other") return;
+  const v = (prompt("Genre:") || "").trim();
+  drawGenre(v, eGenre.dataset.apple || "");
+};
 fitChips.onclick = e => { const x = e.target.closest(".x"); if (x) { fitSel.splice(+x.dataset.i, 1); drawFits(); } };
 document.addEventListener("click", e => {
   const b = e.target.closest(".edit"); if (!b) return;
   editing = { artist: b.dataset.i, title: b.dataset.t };
   const n = noteFor(editing);
   dlgTitle.textContent = editing.title; dlgArtist.textContent = editing.artist;
-  fitSel = split(n.fits_show); drawFits(); eFilm.value = n.film; eNote.value = n.note;
+  fitSel = split(n.fits_show); drawFits(); eFilm.value = n.film; eNote.value = n.note; eStyle.value = n.style || "";
+  const apple = (tracks.find(t => key(t.artist, t.title) === key(editing.artist, editing.title)) || {}).genre || "";
+  eGenre.dataset.apple = apple; drawGenre(n.genre || "", apple);
   dlg.showModal();
 });
 dlgCancel.onclick = () => dlg.close();
 dlgSave.onclick = () => {
   const old = noteFor(editing);
   const k = key(editing.artist, editing.title);
-  const base = pending[k]?._base || { fits_show: old.fits_show || "", film: old.film || "", note: old.note || "" };   // Stand vor deiner Änderung
+  const base = pending[k]?._base || { fits_show: old.fits_show || "", film: old.film || "", note: old.note || "", genre: old.genre || "", style: old.style || "" };   // Stand vor deiner Änderung
   pending[k] = { ...EMPTY, ...old, artist: old.artist || editing.artist, title: old.title || editing.title,
-    fits_show: fitSel.join(", "), film: eFilm.value.trim(), note: eNote.value.trim().replace(/\s*\n\s*/g, " "), _base: base };
+    fits_show: fitSel.join(", "), film: eFilm.value.trim(), note: eNote.value.trim().replace(/\s*\n\s*/g, " "),
+    genre: eGenre.value === "__other" ? "" : eGenre.value, style: eStyle.value.trim(), _base: base };
   savePending(); dlg.close(); buildRows(); fillSelects(); render();
 };
 // Vor dem Übernehmen die NEUESTE Notizdatei von GitHub holen und nur deine geänderten Felder einsetzen –
@@ -410,13 +433,13 @@ saveNotes.onclick = async () => {
     const cur = all.get(k), base = v._base;
     if (!cur) { const { _base, ...clean } = v; all.set(k, clean); continue; }
     const merged = { ...cur };
-    for (const f of ["fits_show", "film", "note"])   // nur was du geändert hast; Listen/Stil bleiben wie auf GitHub
-      if (!base || (v[f] || "") !== (base[f] || "")) merged[f] = v[f];
+    for (const f of ["fits_show", "film", "note", "genre", "style"])   // nur was du geändert hast; Listen bleiben wie auf GitHub
+      if (!base || (f in base && (v[f] || "") !== (base[f] || ""))) merged[f] = v[f] || "";
     all.set(k, merged);
   }
   if (!fresh) { alert("Die neueste Notizdatei ist gerade nicht erreichbar. Bitte in ein paar Minuten noch einmal „Notizen übernehmen“ tippen – deine Notizen bleiben hier gespeichert."); return; }
   const lines = [NOTE_COLS.join(",")];
-  for (const n of all.values()) if (n.fits_show || n.film || n.note || n.lists) lines.push(NOTE_COLS.map(c => csvCell(n[c] || "")).join(","));
+  for (const n of all.values()) if (n.fits_show || n.film || n.note || n.lists || n.style || n.genre) lines.push(NOTE_COLS.map(c => csvCell(n[c] || "")).join(","));
   const text = lines.join("\n") + "\n";
   try { await navigator.clipboard.writeText(text); } catch (e) { prompt("Bitte kopieren:", text); }
   window.open(REPO_EDIT, "_blank");
@@ -433,7 +456,7 @@ dlCsv.onclick = () => {
   for (const t of filtered()) {
     const n = noteFor(t), h = hoursSince(t.last_played_utc);
     const status = t.unplayed ? "noch nicht gelaufen" : (h >= (freeHours() || 36) ? "frei" : `vor ${Math.round(h)} Std.`);
-    lines.push([t.artist, t.title, t.genre, n.style, fitsOf(t).join(", "), listsOf(t).join(", "), n.film || t.film_hint, n.note, String(t.plays), fmt(t.last_played_utc), status]
+    lines.push([t.artist, t.title, genreOf(t), n.style, fitsOf(t).join(", "), listsOf(t).join(", "), n.film || t.film_hint, n.note, String(t.plays), fmt(t.last_played_utc), status]
       .map(v => csvCell(String(v ?? ""))).join(","));
   }
   const parts = [fList.value, fFit.value, fShow.value, fGenre.value].filter(Boolean).join("_") || "Plattenregal";
