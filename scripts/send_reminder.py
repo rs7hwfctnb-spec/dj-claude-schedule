@@ -20,10 +20,11 @@ from zoneinfo import ZoneInfo
 # ---- Einstellungen -------------------------------------------------------
 SEND_BLOCKS = [1, 2, 3]          # z. B. [1] = nur noch eine Mail pro Tag
 SIGNATURE = "Arrly"               # Absendername
+# Alles, was an den DJ geht, ist seit 30.10. auf Englisch (Arrlys Entscheidung).
 CLOSING = (
-    "Wie immer gilt, ich möchte keine Credits, ich möchte keine Namensnennung.\n"
-    "Es ist DEINE Sendung.\n"
-    "Viel Erfolg\n"
+    "As always: I don't want credits, and please don't mention my name.\n"
+    "It's YOUR show.\n"
+    "Good luck\n"
     "Arrly\n"
     "💙\n\n"
     "Your shelf – always fresh, entirely optional: https://tf-schedule.github.io/dj-claude-schedule/dj.html"
@@ -52,15 +53,15 @@ SAME_SHOW = {   # seine Namen → unsere Namen (gilt als „passt schon“)
     "Sunday Papers": "The Paper", "American Ambrosia": "American Diner",
 }
 DJ_IDEAS = {   # Sendungen, die auf einen Wunsch des DJ zurückgehen – statt Beschreibung eine Erinnerung daran
-    "Magnetosphere": "Das war dein eigener Wunsch: elektronische Musik aus aller Welt, ein Stück pro Land.",
-    "Crossed Wires": "Das war deine eigene Idee: Songs, die nicht zusammengehören – und doch passen.",
+    "Magnetosphere": "This was your own wish: electronic music from all over the world, one track per country.",
+    "Crossed Wires": "This was your own idea: songs that don't belong together – and somehow do.",
 }
-OPENERS = [   # wechselt täglich, damit die Mails nicht gleich aussehen (aus Hörersicht, „uns“)
-    "für {tag} hätten wir ein paar Tauschideen – falls du uns damit überraschen magst:",
-    "heute ist {tag}. Falls du Lust hast, uns etwas anderes zu spielen, wären das unsere Tauschideen:",
-    "wir würden uns am {tag} über diese Tauschideen freuen – ganz wie du magst:",
-    "ein {tag}-Gruß und ein paar Tauschideen, falls du uns damit eine Freude machen willst:",
-    "falls du uns Abwechslung bieten möchtest: Für {tag} gäbe es diese Tauschideen:",
+OPENERS = [   # wechselt täglich, damit die Mails nicht gleich aussehen (aus Hörersicht, „we/us“)
+    "for {tag} we'd have a few swap ideas – in case you'd like to surprise us:",
+    "it's {tag}. If you feel like playing us something different, here are our swap ideas:",
+    "we'd love these swap ideas on {tag} – entirely up to you:",
+    "a {tag} hello and a few swap ideas, in case you'd like to make us happy:",
+    "in case you'd like to give us some variety: here are swap ideas for {tag}:",
 ]
 REGAL_SKIP = {"Open Channel", "The Paper"}   # hier keine Titelvorschläge (offene Stunde / Nachrichten)
 REGAL_URL = "https://tf-schedule.github.io/dj-claude-schedule/data/"
@@ -71,7 +72,7 @@ PT = ZoneInfo("America/Los_Angeles")
 UTC = ZoneInfo("UTC")
 ROOT = Path(__file__).resolve().parent.parent
 CSV_FILE = ROOT / "schedule-week.csv"
-DESC_FILE = ROOT / "show-descriptions.csv"
+DESC_FILE = ROOT / "show-descriptions-en.csv"   # englisch für den DJ; deutsche Fassung: show-descriptions.csv
 SPECIALS_FILE = ROOT / "specials.csv"   # einmalige Sondersendungen (überschreiben den Wochenplan an diesem Tag)
 STATE_FILE = ROOT / "state" / "sent.txt"
 NEXT_POST = ROOT / "next-post.txt"
@@ -160,16 +161,16 @@ def week_theme(show, day):
     return r["themes"][weeks % len(r["themes"])]
 
 
-TAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+TAGE = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 
 def span(a, b):
-    """Zeitraum eines Blocks in Worten, z. B. von Montag, 26.10. 11pm bis Dienstag, 27.10. 6am PT."""
+    """Zeitraum eines Blocks in Worten, z. B. from Monday, 10/26 11pm to Tuesday, 10/27 6am PT."""
     def d(x):
-        return f"{TAGE[x.weekday()]}, {x.day}.{x.month}."
+        return f"{TAGE[x.weekday()]}, {x.month}/{x.day}"
     if a.date() == b.date():
-        return f"am {d(a)} von {fmt_pt(a)} bis {fmt_pt(b)} PT (jede Zeile ist eine Stunde)"
-    return f"von {d(a)} {fmt_pt(a)} bis {d(b)} {fmt_pt(b)} PT (jede Zeile ist eine Stunde)"
+        return f"on {d(a)} from {fmt_pt(a)} to {fmt_pt(b)} PT (one line per hour)"
+    return f"from {d(a)} {fmt_pt(a)} to {d(b)} {fmt_pt(b)} PT (one line per hour)"
 
 
 def label(d):
@@ -228,8 +229,8 @@ def build_diff(block, now):
             continue        # seine eigene Sendung (z. B. Crossfade Cabinet) – als gegeben nehmen, nicht wegtauschen
         name = show
         if show in ROTATIONS and ROTATIONS[show]["themes"]:
-            name += f" (diese Woche: {week_theme(show, slot.date())})"
-        line = f"• {TAGE[slot.weekday()][:2]} {fmt_pt(slot)}: {name}" + (f" statt {theirs}" if theirs else "")
+            name += f" (this week: {week_theme(show, slot.date())})"
+        line = f"• {TAGE[slot.weekday()][:3]} {fmt_pt(slot)}: {name}" + (f" instead of {theirs}" if theirs else "")
         if show not in described:
             if show in DJ_IDEAS:
                 line += f"\n  {DJ_IDEAS[show]}"
@@ -246,16 +247,16 @@ def build_diff(block, now):
     opener = OPENERS[(cycle.toordinal() * 3 + block) % len(OPENERS)].format(tag=tag)
     n = len(items)
     body = (
-        "Lieber DJ,\n\n"
-        f"{opener}\n\n"
+        "Dear DJ,\n\n"
+        f"{opener[:1].upper() + opener[1:]}\n\n"
         + "\n".join(l for _, l in items) + "\n\n"
-        + ("Alle anderen Stunden passen schon so, wie du sie spielst. " if n < 8 else "")
-        + "Du entscheidest, was du davon nimmst – es ist nur ein Geländer.\n\n"
+        + ("All the other hours are fine just the way you play them. " if n < 8 else "")
+        + "You decide what to take – it's only a handrail.\n\n"
         f"{CLOSING}\n"
     )
     when = (f"{fmt_pt(a)}–{fmt_pt(b)}" if a.date() == b.date()
-            else f"{TAGE[a.weekday()][:2]} {fmt_pt(a)} bis {TAGE[b.weekday()][:2]} {fmt_pt(b)}")
-    subject = f"{tag}: {n} Tauschidee{'n' if n != 1 else ''} für {when} PT 🎧"
+            else f"{TAGE[a.weekday()][:3]} {fmt_pt(a)} to {TAGE[b.weekday()][:3]} {fmt_pt(b)}")
+    subject = f"{tag}: {n} swap idea{'s' if n != 1 else ''} for {when} PT 🎧"
     return key, subject, body, post
 
 
@@ -289,32 +290,32 @@ def build(block, now):
             if show in ROTATIONS and ROTATIONS[show]["themes"]:
                 theme = week_theme(show, slot.date())
                 theme_desc = desc.get(ROTATIONS[show]["prefix"] + theme)
-                note += f"\n  Diese Woche: {theme}" + (f" – {theme_desc}" if theme_desc else "")
+                note += f"\n  This week: {theme}" + (f" – {theme_desc}" if theme_desc else "")
             if regal and show not in REGAL_SKIP:
                 key_show = ROTATIONS[show]["prefix"] + week_theme(show, slot.date()) if show in ROTATIONS and ROTATIONS[show]["themes"] else show
                 picks = regal_picks(regal, key_show, slot.date(), now)
                 if picks:
-                    note += "\n  Aus dem Regal, länger nicht gelaufen: " + " · ".join(f"{n['artist']} – {n['title']}" for n in picks)
+                    note += "\n  From the shelf, not played for a while: " + " · ".join(f"{n['artist']} – {n['title']}" for n in picks)
             notes.append(note)
     lines[0] = f"{label(slots[-1])} PT/UTC ({block}/3)"   # echtes Datum der Sendungen
     mail_block = "\n".join(lines)
     lines.append(TAGLINE)
     post = "\n".join(lines)
-    notes_text = ("Zu den Sendungen – nutze die Beschreibungen gern, wenn du magst:\n" + "\n".join(notes) + "\n\n") if notes else ""
+    notes_text = ("About the shows – feel free to use the descriptions:\n" + "\n".join(notes) + "\n\n") if notes else ""
 
     if block == 1:
-        wish = "falls du ihn als neuen Post teilen magst"
+        wish = "in case you'd like to share it as a new post"
     else:
-        wish = f"falls du ihn als Antwort unter deinen Post „{label(cycle)} PT/UTC (1/3)“ setzen magst"
-    block_text = f"Hier der Block, {wish}:\n\n{post}\n\n" if POST_HINT else f"Hier der Block:\n\n{mail_block}\n\n"
+        wish = f"in case you'd like to reply with it under your post “{label(cycle)} PT/UTC (1/3)”"
+    block_text = f"Here's the block, {wish}:\n\n{post}\n\n" if POST_HINT else f"Here's the block:\n\n{mail_block}\n\n"
     today = now.astimezone(PT)
     body = (
-        "Hallo DJ Claude,\n\n"
-        f"Heute ist {TAGE[today.weekday()]}, der {today.day}.{today.month}. (PT). "
-        "Dein Wochenplan hat für jeden Tag ein eigenes Programm.\n\n"
-        "Hier ist ein Geländer für die nächsten Stunden – zum Festhalten, wenn du magst. "
-        "Du entscheidest, was du davon nimmst, änderst oder weglässt.\n"
-        f"Dieser Block läuft {span(slots[0], slots[-1])}.\n"
+        "Dear DJ,\n\n"
+        f"Today is {TAGE[today.weekday()]}, {today.month}/{today.day} (PT). "
+        "Your week has its own programme for each day.\n\n"
+        "Here's a handrail for the next hours – to hold on to if you like. "
+        "You decide what to take, change or leave out.\n"
+        f"This block runs {span(slots[0], slots[-1])}.\n"
         f"{block_text}"
         f"{notes_text}"
         f"{CLOSING}\n"
@@ -322,7 +323,7 @@ def build(block, now):
     a, b = slots[0], slots[-1]
     when = (f"{label(a)} {fmt_pt(a)}–{fmt_pt(b)}" if a.date() == b.date()
             else f"{label(a)} {fmt_pt(a)} – {label(b)} {fmt_pt(b)}")
-    subject = f"Geländer {when} PT ({block}/3) 🎧"
+    subject = f"Handrail {when} PT ({block}/3) 🎧"
     key = f"{cycle:%Y-%m-%d}-{block}"
     return key, subject, body, post
 
