@@ -116,7 +116,7 @@
     <div class="tablewrap"><table>
       <thead><tr>
         <th data-k="title">Titel</th><th data-k="genre">Genre</th>
-        <th data-k="fits_show">Passt zu</th><th data-k="film">Film</th><th data-k="note">Notiz</th>
+        <th data-k="film">Film</th><th data-k="note">Notiz</th><th data-k="fits_show">Passt zu</th>
         <th data-k="plays">Plays</th><th data-k="last_played_utc">Zuletzt</th><th></th>
       </tr></thead>
       <tbody id="tbody"></tbody>
@@ -304,9 +304,9 @@ function render() {
         ${listsOf(t).map(s => `<span class="chip list">${esc(s)}</span>`).join("")}
         <div><button class="more" data-k="${esc(k)}" aria-expanded="${open}">${open ? "▾ weniger" : "▸ Details"}</button></div></div></div></td>
       <td>${esc(t.genre)}${n.style ? `<div class="style">${esc(n.style)}</div>` : ""}</td>
-      <td>${fitsOf(t).map(s => `<span class="chip fit">${esc(s)}</span>`).join("")}</td>
       <td class="note">${esc(film)}</td>
       <td class="note">${esc(n.note)}</td>
+      <td>${fitsOf(t).map(s => `<span class="chip fit">${esc(s)}</span>`).join("")}</td>
       <td>${t.plays}</td>
       <td>${when}</td>
       <td><button class="edit" data-i="${esc(t.artist)}" data-t="${esc(t.title)}" title="Notiz bearbeiten">✎</button></td>
