@@ -182,6 +182,9 @@ function normT(t) {
     .replace(/\s*[\(\[][^\)\]]*([\)\]]|$)/g, "").replace(/\s+-\s+.*(remaster|version|live|mix|edit|mono|stereo).*$/, "")
     .replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+(i|ii|iii|iv|v|vi|vii|viii|ix|x)$/, "");
 }
+// Sortieren wie in Bibliotheken: führende Klammern, Anführungszeichen und Satzzeichen ignorieren
+// – „(Sittin' On) The Dock of the Bay“ steht unter S; angezeigt wird weiter der volle Titel
+const sortName = v => String(v).replace(/^[\s(\[{"'„“‚‘’¿¡.…-]+/, "").replace(/^\(?([^)]*)\)\s*/, "$1 ");
 const key = (a, t) => normA(a) + "|" + normT(t);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fmt = iso => iso ? new Date(iso).toLocaleString("de-DE", { timeZone: "Europe/Berlin", day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }) : "";
@@ -278,7 +281,8 @@ function filtered() {
   }).sort((a, b) => {
     const va = sortK in a ? a[sortK] : noteFor(a)[sortK] || "";
     const vb = sortK in b ? b[sortK] : noteFor(b)[sortK] || "";
-    return (typeof va === "number" ? va - vb : String(va).localeCompare(String(vb), "de")) * sortDir;
+    if (typeof va === "number") return (va - vb) * sortDir;
+    return sortName(va).localeCompare(sortName(vb), "de") * sortDir;
   });
 }
 
