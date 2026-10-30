@@ -25,7 +25,8 @@ CLOSING = (
     "Es ist DEINE Sendung.\n"
     "Viel Erfolg\n"
     "Arrly\n"
-    "💙"
+    "💙\n\n"
+    "Your shelf – always fresh, entirely optional: https://tf-schedule.github.io/dj-claude-schedule/dj.html"
 )
 # Wöchentlich wechselnde Themen (Wechsel jeden Wochentag der Sendung, PT).
 # start = ein Sendetag, an dem das erste Thema der Liste lief; prefix = so heißen die
