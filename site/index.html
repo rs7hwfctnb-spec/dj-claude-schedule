@@ -63,6 +63,9 @@
   .detail .cols > div { min-width: 220px; flex: 1; }
   .detail ol { margin: 0; padding-left: 18px; }
   .lastshow { font-size: 12px; margin-top: 2px; }
+  .fitchips { margin: 4px 0 6px; }
+  .fitchips .x { border: none; background: none; color: inherit; cursor: pointer; font-size: 14px; padding: 0 0 0 2px; }
+  #fitAdd { width: 100%; margin-bottom: 8px; }
   .edit { border: none; background: none; cursor: pointer; font-size: 16px; color: var(--muted); }
   dialog { border: 1px solid var(--line); border-radius: 14px; background: var(--card); color: var(--ink); width: min(520px, 94vw); padding: 18px; }
   dialog::backdrop { background: rgba(0,0,0,.35); }
@@ -141,10 +144,11 @@
 <dialog id="dlg">
   <div class="t" id="dlgTitle"></div>
   <div class="a" id="dlgArtist"></div>
-  <label>Passt zu Sendung(en) <input id="eFit" list="showList" placeholder="z. B. Quiet Quell, Longing Look"></label>
+  <label>Passt zu Sendung(en)</label>
+  <div id="fitChips" class="fitchips"></div>
+  <select id="fitAdd" aria-label="Sendung hinzufügen"></select>
   <label>Film <input id="eFilm" placeholder="z. B. Spiel mir das Lied vom Tod"></label>
   <label>Notiz <textarea id="eNote" rows="3"></textarea></label>
-  <datalist id="showList"></datalist>
   <div class="row" style="justify-content:flex-end">
     <button class="btn" id="dlgCancel">Abbrechen</button>
     <button class="btn primary" id="dlgSave">Merken</button>
@@ -259,7 +263,7 @@ function fillSelects() {
   const fits = uniq(rows.flatMap(t => fitsOf(t)));
   opts("fFit", fits);
   opts("fList", uniq(rows.flatMap(t => listsOf(t))));
-  document.getElementById("showList").innerHTML = uniq([...shows, ...fits]).map(s => `<option value="${esc(s)}">`).join("");
+  showNames = fits;                                          // Auswahl im Bearbeiten-Fenster
 }
 
 function filtered() {
@@ -353,13 +357,29 @@ function renderPlays() {
     `<tr><td colspan="3" class="empty">Noch keine Daten.</td></tr>`;
 }
 
-let editing = null;
+let editing = null, fitSel = [], showNames = [];
+// „Passt zu“ per Auswahl: jede Sendung einzeln hinzufügen, mit × wieder entfernen – kein Tippen, keine Kommafehler
+function drawFits() {
+  fitChips.innerHTML = fitSel.length
+    ? fitSel.map((s, i) => `<span class="chip fit">${esc(s)} <button type="button" class="x" data-i="${i}" aria-label="${esc(s)} entfernen">×</button></span>`).join("")
+    : `<span class="new">noch keine Sendung</span>`;
+  fitAdd.innerHTML = `<option value="">+ Sendung hinzufügen …</option>` +
+    showNames.filter(s => !fitSel.includes(s)).map(s => `<option>${esc(s)}</option>`).join("") +
+    `<option value="__other">✎ anderer Name …</option>`;
+}
+fitAdd.onchange = () => {
+  let v = fitAdd.value;
+  if (v === "__other") v = (prompt("Name der Sendung:") || "").trim();
+  if (v && !fitSel.includes(v)) fitSel.push(v);
+  drawFits();
+};
+fitChips.onclick = e => { const x = e.target.closest(".x"); if (x) { fitSel.splice(+x.dataset.i, 1); drawFits(); } };
 document.addEventListener("click", e => {
   const b = e.target.closest(".edit"); if (!b) return;
   editing = { artist: b.dataset.i, title: b.dataset.t };
   const n = noteFor(editing);
   dlgTitle.textContent = editing.title; dlgArtist.textContent = editing.artist;
-  eFit.value = n.fits_show; eFilm.value = n.film; eNote.value = n.note;
+  fitSel = split(n.fits_show); drawFits(); eFilm.value = n.film; eNote.value = n.note;
   dlg.showModal();
 });
 dlgCancel.onclick = () => dlg.close();
@@ -368,7 +388,7 @@ dlgSave.onclick = () => {
   const k = key(editing.artist, editing.title);
   const base = pending[k]?._base || { fits_show: old.fits_show || "", film: old.film || "", note: old.note || "" };   // Stand vor deiner Änderung
   pending[k] = { ...EMPTY, ...old, artist: old.artist || editing.artist, title: old.title || editing.title,
-    fits_show: eFit.value.trim(), film: eFilm.value.trim(), note: eNote.value.trim().replace(/\s*\n\s*/g, " "), _base: base };
+    fits_show: fitSel.join(", "), film: eFilm.value.trim(), note: eNote.value.trim().replace(/\s*\n\s*/g, " "), _base: base };
   savePending(); dlg.close(); buildRows(); fillSelects(); render();
 };
 // Vor dem Übernehmen die NEUESTE Notizdatei von GitHub holen und nur deine geänderten Felder einsetzen –
