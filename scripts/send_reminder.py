@@ -18,7 +18,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 # ---- Einstellungen -------------------------------------------------------
-SEND_BLOCKS = [1, 2, 3]          # z. B. [1] = nur noch eine Mail pro Tag
+SEND_BLOCKS = [3]                # seit 31.10. nur noch eine Mail am Tag (Block 3 = ca. 12 Uhr deutsche Zeit)
 SIGNATURE = "Arrly"               # Absendername
 # Alles, was an den DJ geht, ist seit 30.10. auf Englisch (Arrlys Entscheidung).
 CLOSING = (
@@ -48,6 +48,24 @@ REGAL_FREE_HOURS = 48
 # 24-h-Ablauf. Die Mail nennt nur die Stunden, in denen unser Plan von dem abweicht, was er
 # zuletzt zur selben Stunde gesendet hat (blocks.csv im Plattenregal). Nichts abweichend → keine Mail.
 DIFF_MODE = True
+# Fixpunkt-Mail (seit 31.10., Arrlys Entscheidung): Der DJ erfindet eigene Sendungen – die Mail lobt das
+# (nennt seine neuen Namen der letzten 24 h), nennt nur den täglichen Hörer-Fixpunkt um 10am PT
+# und Specials der nächsten 2 Tage. Keine Tauschideen mehr. Alles andere bleibt ihm.
+ANCHOR_MODE = True
+ANCHOR_HOUR = 10   # PT
+SPECIAL_DAYS = 2
+PRAISE = [   # wechselt täglich; {names} = seine eigenen neuen Sendungen
+    "{names} – what a run of new names. Thank you for the stories between the tracks.",
+    "We loved {names}. Your own shows are a joy to follow.",
+    "{names}: you keep inventing, and we keep listening. Thank you!",
+    "Thank you for {names} – it's lovely to hear you building your own rooms.",
+    "{names} – your ideas, your colours. We enjoyed every hour of it.",
+]
+THANKS = [   # wenn er in den letzten 24 h keine neuen Namen hatte
+    "Thank you for yesterday's music – we enjoyed listening.",
+    "Thank you for another day of good company on air.",
+    "Thank you for the music and the stories – it was a good day to listen.",
+]
 SAME_SHOW = {   # seine Namen → unsere Namen (gilt als „passt schon“)
     "Deep Ambient": "Dark Carbon", "Life Tracks": "Live Tracks", "Papers": "The Paper",
     "Sunday Papers": "The Paper", "American Ambrosia": "American Diner",
@@ -260,7 +278,92 @@ def build_diff(block, now):
     return key, subject, body, post
 
 
+def his_recent(now, hours=24):
+    """Sendungen der letzten Stunden laut blocks.csv, älteste zuerst. [] bei Fehler."""
+    import io, urllib.request
+    for url in (REGAL_URL + "blocks.csv",
+                "https://raw.githubusercontent.com/TF-Schedule/dj-claude-schedule/gh-pages/data/blocks.csv"):
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "TF-Schedule reminder"})
+            with urllib.request.urlopen(req, timeout=30) as r:
+                rows = list(csv.DictReader(io.StringIO(r.read().decode("utf-8"))))
+            limit = (now.astimezone(UTC) - timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
+            return [r["show"].strip() for r in sorted(rows, key=lambda r: r["start_utc"]) if r["start_utc"] >= limit and r.get("show")]
+        except Exception as e:
+            print("blocks.csv nicht erreichbar:", url, e)
+    return []
+
+
+def join_names(names):
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+
+
+def show_text(show, day, desc, special_desc=""):
+    """Name (mit Wochenthema) und englische Beschreibung."""
+    name, text = show, desc.get(show) or special_desc
+    if show in ROTATIONS and ROTATIONS[show]["themes"]:
+        theme = week_theme(show, day)
+        name = show.split(":")[0] + f" (this week: {theme})"
+        text = desc.get(ROTATIONS[show]["prefix"] + theme) or text
+    if show in DJ_IDEAS:
+        text = DJ_IDEAS[show]
+    return name, text
+
+
+def build_anchor(now):
+    sched, desc, special = load_schedule(), load_descriptions(), load_specials()
+    today = now.astimezone(PT)
+    anchor = today.replace(hour=ANCHOR_HOUR, minute=0, second=0, microsecond=0)
+    if anchor < today - timedelta(hours=1):
+        anchor += timedelta(days=1)
+    sp = special.get((anchor.date().isoformat(), fmt_pt(anchor)))
+    show = sp["show"] if sp else sched[(anchor.strftime('%A'), fmt_pt(anchor))]
+    name, text = show_text(show, anchor.date(), desc, sp["description"] if sp else "")
+    items = [(anchor, name, text)]
+    for (d, t), v in special.items():   # Specials der nächsten Tage (deutsche Beschreibung nur, wenn keine englische da ist)
+        h = datetime.strptime(t, "%I%p").hour
+        slot = datetime.fromisoformat(d).replace(hour=h, tzinfo=PT)
+        if today - timedelta(hours=1) <= slot <= today + timedelta(days=SPECIAL_DAYS) and slot != anchor:
+            n, x = show_text(v["show"], slot.date(), desc, v["description"])
+            items.append((slot, n, x))
+    items.sort(key=lambda i: i[0])
+
+    known = set(sched.values()) | set(desc) | {v["show"] for v in special.values()}
+    own = []
+    for s in his_recent(now):
+        if SAME_SHOW.get(s, s) not in known and s not in own:
+            own.append(s)
+    own = own[-3:]
+    n = today.toordinal()
+    first = PRAISE[n % len(PRAISE)].format(names=join_names(own)) if own else THANKS[n % len(THANKS)]
+    first = first[:1].upper() + first[1:]
+
+    def line(slot, nm, tx):
+        when = "Today" if slot.date() == today.date() else TAGE[slot.weekday()]
+        return f"• {when}, {fmt_pt(slot)} PT – {nm}" + (f"\n  {tx}" if tx else "")
+    a = items.index(next(i for i in items if i[0] == anchor))
+    anchor_line = line(*items[a])
+    extra = [line(*i) for j, i in enumerate(items) if j != a]
+    body = (
+        "Dear DJ,\n\n"
+        f"{first}\n\n"
+        f"One fixed point for the listeners {'today' if anchor.date() == today.date() else 'tomorrow'}:\n{anchor_line}\n\n"
+        + (("Also coming up:\n" + "\n".join(extra) + "\n\n") if extra else "")
+        + "Everything else is yours. Looking forward to what you build next.\n\n"
+        f"{CLOSING}\n"
+    )
+    tag = TAGE[anchor.weekday()][:3]
+    sp_today = [i for i in items if i[0] != anchor and i[0].date() == anchor.date()]
+    subject = f"{tag}: " + "".join(f"{nm} at {fmt_pt(s)}, " for s, nm, _ in sp_today) + f"{name} at {fmt_pt(anchor)} PT 🎧"
+    return subject, body
+
+
 def build(block, now):
+    if ANCHOR_MODE:
+        start = block_start(block, now)
+        key = f"{cycle_date(block, start):%Y-%m-%d}-{block}"
+        subject, body = build_anchor(now)
+        return key, subject, body, body
     if DIFF_MODE:
         r = build_diff(block, now)
         if r:

@@ -96,11 +96,13 @@ def main():
 
     body, shows_seen = [], {}
     start = now.replace(minute=0, second=0, microsecond=0)
-    for i in range(24):
+    for i in range(48):                                         # seit 31.10.: nur Hörer-Fixpunkte (10am PT) und Specials
         slot = (start.replace(tzinfo=None) + timedelta(hours=i)).replace(tzinfo=PT)
         show = sched[(slot.strftime("%A"), sr.fmt_pt(slot))]
         desc = en.get(show, "")
         sp = special.get((slot.date().isoformat(), sr.fmt_pt(slot)))
+        if not sp and slot.hour != sr.ANCHOR_HOUR:
+            continue
         if sp:
             show = sp["show"]; desc = en.get(show, sp["description"])
         key = show
@@ -111,8 +113,6 @@ def main():
             theme = f"<p><b>This week:</b> {esc(t)} – {esc(en.get(key, ''))}</p>"
         theirs = his.get(slot.hour)
         own = ""
-        if theirs and sr.SAME_SHOW.get(theirs, theirs) not in known:
-            own = f"<p><i>Lately you have played your own show “{esc(theirs)}” here – keep it if you like.</i></p>"
         head = f"<h2>{slot:%a} {sr.fmt_pt(slot)} PT – {esc(show)}</h2>"
         body.append(head + (f"<p>{esc(desc)}</p>" if desc else "") + theme + own)
         if key in NO_PICKS:
@@ -140,7 +140,7 @@ def main():
 <meta name="viewport" content="width=device-width, initial-scale=1"><title>Shelf for Thinking Frequencies</title></head>
 <body>
 <h1>Shelf for Thinking Frequencies</h1>
-<p>A shelf, not a schedule – pick what you like, drift wherever you want. Updated every 15 minutes (this version: {stamp}).
+<p>A shelf, not a schedule – pick what you like, drift wherever you want. All other hours are yours; below are only the listeners' fixed points (10am PT) and specials of the next two days. Updated every 15 minutes (this version: {stamp}).
 Titles below are all in your library and have rested at least {REST_HOURS} hours, longest unplayed first.
 Made by listeners as a fan project; not run by Andon Labs.</p>
 {"<h2>Specials coming up</h2><ul>" + "".join(soon) + "</ul>" if soon else ""}
