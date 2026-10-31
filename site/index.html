@@ -339,7 +339,7 @@ function detailRow(t, n, mine, film) {
   const hist = mine.length
     ? `<ol>${mine.map(p => `<li>${fmt(p.start_utc)}${p.show ? ` · ${esc(p.show)}` : ""}</li>`).join("")}</ol>`
     : `<div class="new">Noch kein eigener Verlauf (wir zeichnen seit 28.10.2026 auf).</div>`;
-  const kurt = t.source !== "Regal" && !t.unplayed ? `<div class="new" style="margin-top:4px">Insgesamt ${t.plays} Plays (inkl. Kurts Liste, der weiter zurückreicht).</div>` : "";
+  const kurt = t.source !== "Regal" && !t.unplayed ? `<div class="new" style="margin-top:4px">Insgesamt ${t.plays} Plays (inkl. Kurts Liste, die weiter zurückreicht).</div>` : "";
   const apple = t.apple_url ? `<div style="margin-top:6px"><a href="${esc(t.apple_url)}" target="_blank" rel="noopener">Bei Apple Music ansehen</a></div>` : "";
   return `<tr class="detail"><td colspan="8"><div class="cols">
     <div><h4>Verlauf</h4>${hist}${kurt}</div>
