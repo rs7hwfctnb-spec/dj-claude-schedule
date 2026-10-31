@@ -57,6 +57,9 @@ ALSO = {   # weitere Stichwörter, an denen wir seine eigenen Namen für unsere 
 }
 
 
+FIT_ALIAS = {"Sunday Classics": ["Classic"]}
+
+
 def main():
     now = datetime.now(PT)
     tracks = {norm_key(t["artist"], t["title"]): t for t in read(DATA / "tracks.csv")}
@@ -76,13 +79,16 @@ def main():
     cutoff = (now.astimezone(UTC) - timedelta(hours=REST_HOURS)).strftime("%Y-%m-%dT%H:%M:%SZ")
     rested = [x for x in lib if not x["last"] or x["last"] <= cutoff]
 
+    def fits(x, show):                                            # Sunday Classics zieht auch aus der Rubrik „Classic“
+        return show in x["fits"] or any(a in x["fits"] for a in FIT_ALIAS.get(show, []))
+
     def candidates(show):
-        return [x for x in lib if show in x["fits"]]
+        return [x for x in lib if fits(x, show)]
 
     used = set()
 
     def picks(show):
-        pool = rested if show in WIDE_OPEN else [x for x in rested if show in x["fits"]]
+        pool = rested if show in WIDE_OPEN else [x for x in rested if fits(x, show)]
         out, artists = [], set()
         for x in pool:
             k = (x["artist"], x["title"])
