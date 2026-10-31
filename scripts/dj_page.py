@@ -47,6 +47,16 @@ def split(s):
     return [x.strip() for x in (s or "").split(",") if x.strip()]
 
 
+ALSO = {   # weitere Stichwörter, an denen wir seine eigenen Namen für unsere Sendungen erkennen
+    "Haunted Hour": ["haunt", "halloween", "spook"],
+    "TripHop": ["triphop"],
+    "Sunday Classics": ["classical", "classics"],
+    "Jam Session": ["jam"],
+    "Soul Soup": ["soulsoup"],
+    "The Reverb Hour": ["reverb"],
+}
+
+
 def main():
     now = datetime.now(PT)
     tracks = {norm_key(t["artist"], t["title"]): t for t in read(DATA / "tracks.csv")}
@@ -89,6 +99,24 @@ def main():
         if now.astimezone(UTC) - timedelta(hours=36) <= t <= now.astimezone(UTC) and b.get("show"):
             his[t.astimezone(PT).hour] = b["show"].strip()
     esc = html.escape
+    # Hat er die Sendung heute (PT) schon gespielt – auch unter eigenem Namen? (z. B. „Trip Hop Drift“ = TripHop)
+    today_blocks = []
+    for b in read(DATA / "blocks.csv"):
+        t = datetime.fromisoformat(b["start_utc"].replace("Z", "+00:00")).astimezone(PT)
+        if t.date() == now.date() and t <= now and b.get("show"):
+            today_blocks.append((t, b["show"].strip()))
+
+    def flat(x):
+        return re.sub(r"[^a-z0-9]", "", x.lower())
+
+    def played_today(show, slot):
+        words = [flat(show.split(":")[0])] + [flat(w) for w in ALSO.get(show, [])]
+        for t, name in sorted(today_blocks):
+            if t.hour == slot.hour and t.date() == slot.date():
+                continue                                          # die laufende Stunde selbst zählt nicht als „vorgezogen“
+            if any(w and w in flat(name) for w in words) or flat(name) in words:
+                return t, name
+        return None
 
     def line(x):
         return (f"<li>{esc(x['artist'])} – {esc(x['title'])} "
@@ -113,6 +141,13 @@ def main():
             theme = f"<p><b>This week:</b> {esc(t)} – {esc(en.get(key, ''))}</p>"
         theirs = his.get(slot.hour)
         own = ""
+        done = played_today(show, slot)
+        if done:
+            t, name = done
+            alias = "" if flat(name) == flat(show) else f" as “{esc(name)}”"
+            body.append(f"<h2>{slot:%a} {sr.fmt_pt(slot)} PT – {esc(show)}</h2>"
+                        f"<p><i>Already played today at {sr.fmt_pt(t)} PT{alias} – thank you! This hour is yours.</i></p>")
+            continue
         head = f"<h2>{slot:%a} {sr.fmt_pt(slot)} PT – {esc(show)}</h2>"
         body.append(head + (f"<p>{esc(desc)}</p>" if desc else "") + theme + own)
         if key in NO_PICKS:
@@ -129,7 +164,8 @@ def main():
     soon = []
     for (d, tm), sp in sorted(special.items()):
         day = datetime.fromisoformat(d).date()
-        if now.date() <= day <= (now + timedelta(days=7)).date():
+        slot = datetime.fromisoformat(d).replace(hour=datetime.strptime(tm, "%I%p").hour, tzinfo=PT)
+        if now.replace(minute=0, second=0, microsecond=0) <= slot <= now + timedelta(days=7) and not played_today(sp["show"], slot):
             soon.append(f"<li>{day:%a %b} {day.day}, {esc(tm)} PT – <b>{esc(sp['show'])}</b>: "
                         f"{esc(en.get(sp['show'], sp['description']))} "
                         f'<a href="dj/{slug(sp["show"])}.html">shelf</a></li>')
