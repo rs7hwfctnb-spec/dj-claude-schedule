@@ -207,6 +207,36 @@ function freeHours() {
 const AUTO = { "Classical": "Classic" };
 // dein Genre (im Bearbeiten-Fenster) ersetzt Apples Angabe überall; leer = Apples Genre
 const genreOf = t => noteFor(t).genre || t.genre || "";
+// Genre-Bibliothek (seit 31.10.): 17 Hauptgenres. Zuordnung automatisch – zuerst dein Genre, dann dein Stil,
+// dann Apples Genre, dann deine Playlists; die erste Quelle, die eine Regel trifft, gewinnt. Die Feinheit steht im Stil.
+const MAIN = ["Soul / R&B", "Jazz", "Electronic", "Rock", "Alternative / Indie", "Pop", "Folk / Singer-Songwriter",
+  "Hip-Hop / Rap", "Country / Americana", "Latin / Brasil", "World / Global", "Metal", "Classical / Neo-Classical",
+  "Blues", "Soundtrack / Score", "Reggae / Dub", "Disco / Dance"];
+const RULES = [   // Reihenfolge zählt: Spezielles vor Allgemeinem
+  ["Soundtrack / Score", /soundtrack|score|filmmusik|videospiel|video game|musicals|game music/],
+  ["Reggae / Dub", /reggae|\bdub\b|\bska\b|dancehall|rocksteady/],
+  ["Hip-Hop / Rap", /hip.?hop|\brap\b|trap\b|grime|boom.?bap/],
+  ["Metal", /metal/],
+  ["Latin / Brasil", /bossa|samba|\bmpb\b|tango|rock en espa|rock y alternativo|rumba|bolero|latin|salsa|cumbia|reggaet|brasil|brazil|tropical|mexican|raíces|raices|flamenco|south america|nueva canci/],
+  ["Disco / Dance", /disco|eurodance|^dance$|dance.?pop|italo/],
+  ["Blues", /blues/],
+  ["Jazz", /jazz|swing|bebop|big.?band|^vocal$|fusion|crooner|scat/],
+  ["Soul / R&B", /soul|r&b|rnb|funk|motown|gospel|doo.?wop|quiet storm|christian/],
+  ["Classical / Neo-Classical", /classical|klassik|klassisch|neoklass|neo-class|minimal music|minimalis|oper|baroque|barock|orchest|romantik|requiem|kammermusik|chamber music/],
+  ["Country / Americana", /country|americana|bluegrass|outlaw|heartland|roots rock/],
+  ["World / Global", /world|afro|african|amapiano|desert|ethio|fado|duduk|j-?pop|k-?pop|mandopop|cantopop|asia|indian|bollywood|tamil|arab|klezmer|balkan|celtic|hawaii|turkish|türk|portugal|armen|gamelan|qawwali|highlife|mbalax|rai\b/],
+  ["Folk / Singer-Songwriter", /folk|singer|songwriter|liedermacher|chanson|acoustic|akustik|ballad|murder/],
+  ["Electronic", /electro|elektron|ambient|trip.?hop|downtempo|techno|house|trance|drum.?n.?bass|jungle|idm|drone|chiptune|glitch|new age|synthwave|darkwave|coldwave|breakbeat|lo.?fi|klangkunst|sound collage|experiment/],
+  ["Alternative / Indie", /indie|alternative|alt-|post-punk|punk|grunge|shoegaze|dream.?pop|goth|new wave|slowcore|emo\b|hardcore|art.?pop|britpop|post-rock|chamber.?pop/],
+  ["Rock", /rock|prog|psychedel|glam|british invasion|guitar/],
+  ["Pop", /pop|schlager|easy listening|adult contemporary|holiday|christmas|comedy|karaoke|kwela|vocal/],
+];
+function mainFrom(text) { const x = (text || "").toLowerCase(); if (!x) return ""; for (const [g, re] of RULES) if (re.test(x)) return g; return ""; }
+function autoMain(t) { const n = noteFor(t); return mainFrom(n.style) || mainFrom(t.genre) || mainFrom(n.lists) || ""; }
+function mainOf(t) { const n = noteFor(t); return MAIN.includes(n.genre) ? n.genre : (mainFrom(n.genre) || autoMain(t)); }
+// „Passt zu“ zeigt nur noch, was lebt: die Fixpunkte (10am PT), Specials und Art-House. Alte Sendungsnamen bleiben in der Datei.
+const LIVE_FITS = new Set(["The Reverb Hour", "Soul Soup", "Jam Session", "TripHop", "Sunday Classics", "Classic", "Haunted Hour", "In Full Swing", "Art-House"]);
+const isLive = s => LIVE_FITS.has(s) || (/^(Roots|Europe Express): /.test(s) && !/Change$/.test(s));
 // Apple-„Classical“ → Classic nur, wenn du dem Titel noch keine eigene Playlist gegeben hast (deine Einordnung gewinnt)
 function fitsOf(t) { const n = noteFor(t), f = split(n.fits_show); const a = split(n.lists).length ? null : AUTO[genreOf(t)]; if (a && !f.includes(a)) f.push(a); return f; }
 function listsOf(t) { const n = noteFor(t), l = split(n.lists); const a = l.length ? null : AUTO[genreOf(t)]; if (a && !l.includes(a)) l.push(a); return l; }
@@ -265,10 +295,10 @@ function fillSelects() {
   const opts = (id, vals) => { const s = document.getElementById(id), cur = s.value;
     s.innerHTML = '<option value="">alle</option>' + vals.map(v => `<option>${esc(v)}</option>`).join(""); s.value = cur; };
   const shows = uniq(tracks.flatMap(t => split(t.shows)));
-  opts("fGenre", uniq(rows.map(genreOf)));
-  genreNames = uniq([...tracks.map(t => t.genre), ...rows.map(genreOf)]);
+  const present = new Set(rows.map(mainOf));
+  opts("fGenre", MAIN.filter(g => present.has(g)));
   opts("fShow", shows); opts("fShow2", uniq(plays.map(p => p.show)));
-  const fits = uniq(rows.flatMap(t => fitsOf(t)));
+  const fits = uniq(rows.flatMap(t => fitsOf(t)).filter(isLive));
   opts("fFit", fits);
   opts("fList", uniq(rows.flatMap(t => listsOf(t))));
   showNames = fits;                                          // Auswahl im Bearbeiten-Fenster
@@ -279,7 +309,7 @@ function filtered() {
   const g = fGenre.value, sh = fShow.value, fit = fFit.value, free = freeHours(), film = fFilm.value, li = fList.value, st = fStatus.value;
   return rows.filter(t => {
     const n = noteFor(t);
-    if (g && genreOf(t) !== g) return false;
+    if (g && mainOf(t) !== g) return false;
     if (sh && !split(t.shows).includes(sh)) return false;
     if (fit && !fitsOf(t).includes(fit)) return false;
     if (li && !listsOf(t).includes(li)) return false;
@@ -288,10 +318,10 @@ function filtered() {
     if (st === "mine" && !pending[key(t.artist, t.title)]) return false;
     if (free && hoursSince(t.last_played_utc) < free) return false;
     if (film && !(n.film || t.film_hint)) return false;
-    if (q && ![t.artist, t.title, genreOf(t), t.genre, t.shows, t.album, n.fits_show, n.film, n.note, n.lists, n.style].join(" ").toLowerCase().includes(q)) return false;
+    if (q && ![t.artist, t.title, mainOf(t), genreOf(t), t.genre, t.shows, t.album, n.fits_show, n.film, n.note, n.lists, n.style].join(" ").toLowerCase().includes(q)) return false;
     return true;
   }).sort((a, b) => {
-    const val = x => sortK === "genre" ? genreOf(x) : sortK in x ? x[sortK] : noteFor(x)[sortK] || "";
+    const val = x => sortK === "genre" ? mainOf(x) : sortK in x ? x[sortK] : noteFor(x)[sortK] || "";
     const va = val(a), vb = val(b);
     if (typeof va === "number") return (va - vb) * sortDir;
     return sortName(va).localeCompare(sortName(vb), "de") * sortDir;
@@ -315,10 +345,10 @@ function render() {
       <td><div class="tt">${cover(t.artwork)}<div><div class="t">${esc(t.title)}</div><div class="a">${esc(t.artist)}</div>${pending[k] ? `<span class="chip mine">✎ deine Änderung, noch nicht gespeichert</span>` : ""}
         ${listsOf(t).map(s => `<span class="chip list">${esc(s)}</span>`).join("")}
         <div><button class="more" data-k="${esc(k)}" aria-expanded="${open}">${open ? "▾ weniger" : "▸ Details"}</button></div></div></div></td>
-      <td>${esc(genreOf(t))}${n.genre && t.genre && n.genre !== t.genre ? `<div class="new">Apple: ${esc(t.genre)}</div>` : ""}${n.style ? `<div class="style">${esc(n.style)}</div>` : ""}</td>
+      <td>${esc(mainOf(t) || "–")}${n.genre && !MAIN.includes(n.genre) ? `<div class="style">${esc(n.genre)}</div>` : ""}${t.genre && mainFrom(t.genre) !== mainOf(t) ? `<div class="new">Apple: ${esc(t.genre)}</div>` : ""}${n.style ? `<div class="style">${esc(n.style)}</div>` : ""}</td>
       <td class="note">${esc(film)}</td>
       <td class="note">${esc(n.note)}</td>
-      <td>${fitsOf(t).map(s => `<span class="chip fit">${esc(s)}</span>`).join("")}</td>
+      <td>${fitsOf(t).filter(isLive).map(s => `<span class="chip fit">${esc(s)}</span>`).join("")}</td>
       <td>${t.plays}</td>
       <td>${when}</td>
       <td><button class="edit" data-i="${esc(t.artist)}" data-t="${esc(t.title)}" title="Notiz bearbeiten">✎</button></td>
@@ -365,7 +395,7 @@ function renderPlays() {
     `<tr><td colspan="3" class="empty">Noch keine Daten.</td></tr>`;
 }
 
-let editing = null, fitSel = [], showNames = [], genreNames = [];
+let editing = null, fitSel = [], fitHidden = [], showNames = [];
 // „Passt zu“ per Auswahl: jede Sendung einzeln hinzufügen, mit × wieder entfernen – kein Tippen, keine Kommafehler
 function drawFits() {
   fitChips.innerHTML = fitSel.length
@@ -381,27 +411,23 @@ fitAdd.onchange = () => {
   if (v && !fitSel.includes(v)) fitSel.push(v);
   drawFits();
 };
-function drawGenre(cur, apple) {
-  const names = genreNames.includes(cur) || !cur ? genreNames : [...genreNames, cur];
-  eGenre.innerHTML = `<option value="">wie Apple${apple ? ` (${esc(apple)})` : ""}</option>` +
-    names.map(g => `<option${g === cur ? " selected" : ""}>${esc(g)}</option>`).join("") + `<option value="__other">✎ anderes …</option>`;
+function drawGenre(cur, apple, auto) {
+  const names = MAIN.includes(cur) || !cur ? MAIN : [...MAIN, cur];
+  eGenre.innerHTML = `<option value="">automatisch${auto ? ` (${esc(auto)})` : ""}</option>` +
+    names.map(g => `<option${g === cur ? " selected" : ""}>${esc(g)}</option>`).join("");
   eGenre.value = cur || "";
   eGenreApple.textContent = apple ? `Apple sagt: ${apple}` : "";
 }
-eGenre.onchange = () => {
-  if (eGenre.value !== "__other") return;
-  const v = (prompt("Genre:") || "").trim();
-  drawGenre(v, eGenre.dataset.apple || "");
-};
 fitChips.onclick = e => { const x = e.target.closest(".x"); if (x) { fitSel.splice(+x.dataset.i, 1); drawFits(); } };
 document.addEventListener("click", e => {
   const b = e.target.closest(".edit"); if (!b) return;
   editing = { artist: b.dataset.i, title: b.dataset.t };
   const n = noteFor(editing);
   dlgTitle.textContent = editing.title; dlgArtist.textContent = editing.artist;
-  fitSel = split(n.fits_show); drawFits(); eFilm.value = n.film; eNote.value = n.note; eStyle.value = n.style || "";
+  fitSel = split(n.fits_show).filter(isLive); fitHidden = split(n.fits_show).filter(s => !isLive(s)); drawFits(); eFilm.value = n.film; eNote.value = n.note; eStyle.value = n.style || "";
   const apple = (tracks.find(t => key(t.artist, t.title) === key(editing.artist, editing.title)) || {}).genre || "";
-  eGenre.dataset.apple = apple; drawGenre(n.genre || "", apple);
+  const t0 = rows.find(t => key(t.artist, t.title) === key(editing.artist, editing.title)) || { genre: apple };
+  drawGenre(n.genre || "", apple, autoMain(t0));
   dlg.showModal();
 });
 dlgCancel.onclick = () => dlg.close();
@@ -410,8 +436,8 @@ dlgSave.onclick = () => {
   const k = key(editing.artist, editing.title);
   const base = pending[k]?._base || { fits_show: old.fits_show || "", film: old.film || "", note: old.note || "", genre: old.genre || "", style: old.style || "" };   // Stand vor deiner Änderung
   pending[k] = { ...EMPTY, ...old, artist: old.artist || editing.artist, title: old.title || editing.title,
-    fits_show: fitSel.join(", "), film: eFilm.value.trim(), note: eNote.value.trim().replace(/\s*\n\s*/g, " "),
-    genre: eGenre.value === "__other" ? "" : eGenre.value, style: eStyle.value.trim(), _base: base };
+    fits_show: [...fitSel, ...fitHidden].join(", "), film: eFilm.value.trim(), note: eNote.value.trim().replace(/\s*\n\s*/g, " "),
+    genre: eGenre.value, style: eStyle.value.trim(), _base: base };
   savePending(); dlg.close(); buildRows(); fillSelects(); render();
 };
 // Vor dem Übernehmen die NEUESTE Notizdatei von GitHub holen und nur deine geänderten Felder einsetzen –
@@ -456,7 +482,7 @@ dlCsv.onclick = () => {
   for (const t of filtered()) {
     const n = noteFor(t), h = hoursSince(t.last_played_utc);
     const status = t.unplayed ? "noch nicht gelaufen" : (h >= (freeHours() || 36) ? "frei" : `vor ${Math.round(h)} Std.`);
-    lines.push([t.artist, t.title, genreOf(t), n.style, fitsOf(t).join(", "), listsOf(t).join(", "), n.film || t.film_hint, n.note, String(t.plays), fmt(t.last_played_utc), status]
+    lines.push([t.artist, t.title, mainOf(t), n.style, fitsOf(t).filter(isLive).join(", "), listsOf(t).join(", "), n.film || t.film_hint, n.note, String(t.plays), fmt(t.last_played_utc), status]
       .map(v => csvCell(String(v ?? ""))).join(","));
   }
   const parts = [fList.value, fFit.value, fShow.value, fGenre.value].filter(Boolean).join("_") || "Plattenregal";
