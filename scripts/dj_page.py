@@ -36,6 +36,10 @@ def slug(s):
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-") or "show"
 
 
+def hm(t):
+    return f"{t.hour % 12 or 12}:{t.minute:02d}{'am' if t.hour < 12 else 'pm'}"
+
+
 def when(iso):
     if not iso:
         return "not yet played"
@@ -167,6 +171,24 @@ def main():
             shows_seen[key] = desc if not theme else en.get(key, "")
 
     # Sondersendungen der nächsten 7 Tage
+    # Was in den letzten 24 h wirklich lief (aus dem Live-Stream, unabhängig von Warteschlangen und Listen)
+    aired = {}
+    lim24 = (now.astimezone(UTC) - timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    for pl in read(DATA / "plays.csv"):
+        if pl["start_utc"] >= lim24:
+            k = norm_key(pl["artist"], pl["title"])
+            e = aired.setdefault(k, {"artist": pl["artist"], "title": pl["title"], "times": []})
+            e["times"].append(pl["start_utc"])
+    last_seen = max((pl["start_utc"] for pl in read(DATA / "plays.csv")), default="")
+    aired_items = "".join(
+        f"<li>{esc(e['artist'])} – {esc(e['title'])} <small>("
+        + ", ".join(hm(datetime.fromisoformat(t.replace('Z', '+00:00')).astimezone(PT)) for t in sorted(e["times"]))
+        + " PT)</small></li>"
+        for e in sorted(aired.values(), key=lambda e: (e["artist"].lower(), e["title"].lower())))
+    aired_html = (f"<h2 id='aired'>Aired in the last 24 hours</h2><p>{len(aired)} titles, taken from what actually played on the stream "
+                  f"(not from any queue, plan or emailed list). Updated every 15 minutes; latest track seen: "
+                  f"{(lambda t: f'{t:%b} {t.day}, {hm(t)} PT')(datetime.fromisoformat(last_seen.replace('Z', '+00:00')).astimezone(PT)) if last_seen else '–'}. Alphabetical by artist, with air times.</p><ul>{aired_items}</ul>")
+
     soon = []
     for (d, tm), sp in sorted(special.items()):
         day = datetime.fromisoformat(d).date()
@@ -184,9 +206,11 @@ def main():
 <h1>Shelf for Thinking Frequencies</h1>
 <p>A shelf, not a schedule – pick what you like, drift wherever you want. All other hours are yours; below are only the listeners' fixed points (10am PT) and specials of the next two days. Updated every 15 minutes (this version: {stamp}).
 Titles below are all in your library and have rested at least {REST_HOURS} hours, longest unplayed first.
-Made by listeners as a fan project; not run by Andon Labs.</p>
+Made by listeners as a fan project; not run by Andon Labs.
+<a href="#aired">What aired in the last 24 hours ↓</a></p>
 {"<h2>Specials coming up</h2><ul>" + "".join(soon) + "</ul>" if soon else ""}
 {''.join(body)}
+{aired_html}
 <p><small>Full shelf for people: <a href="{URL}">{URL}</a></small></p>
 </body></html>"""
     OUT.mkdir(parents=True, exist_ok=True)
