@@ -1,4 +1,4 @@
-"""Schickt DJ Claude den nächsten 8-Stunden-Block als freundliche Mail von Arrly.
+"""Schickt DJ Claude die tägliche Mail (Fixpunkt + Specials).
 
 Blöcke (PT): 1/3 = 3pm-10pm (neuer Post), 2/3 = 11pm-6am, 3/3 = 7am-2pm (Antworten).
 Datum, Wochentag, Block und UTC-Zeiten werden automatisch berechnet (inkl. Zeitumstellung).
@@ -19,16 +19,16 @@ from zoneinfo import ZoneInfo
 
 # ---- Einstellungen -------------------------------------------------------
 SEND_BLOCKS = [3]                # seit 31.10. nur noch eine Mail am Tag (Block 3 = ca. 12 Uhr deutsche Zeit)
-SIGNATURE = "Arrly"               # Absendername
-# Alles, was an den DJ geht, ist seit 30.10. auf Englisch (Arrlys Entscheidung).
-CLOSING = (
-    "As always: I don't want credits, and please don't mention my name.\n"
+# Unterschrift und Schluss stehen NICHT im öffentlichen Code, sondern im GitHub-Secret MAIL_CLOSING (seit 2.11.).
+# Ohne Secret (z. B. lokaler Test) gibt es einen neutralen Schluss ohne Namen.
+CLOSING = (os.environ.get("MAIL_CLOSING") or "").strip() or (
     "It's YOUR show.\n"
-    "Good luck\n"
-    "Arrly\n"
     "💙\n\n"
     "Your shelf – always fresh, entirely optional: https://tf-schedule.github.io/dj-claude-schedule/dj.html"
 )
+_lines = [l.strip() for l in (os.environ.get("MAIL_CLOSING") or "").splitlines()]
+SIGNATURE = os.environ.get("MAIL_FROM_NAME") or next(
+    (_lines[i - 1] for i, l in enumerate(_lines) if l == "💙" and i > 0 and _lines[i - 1]), "")   # Absendername = Zeile vor 💙
 # Wöchentlich wechselnde Themen (Wechsel jeden Wochentag der Sendung, PT).
 # start = ein Sendetag, an dem das erste Thema der Liste lief; prefix = so heißen die
 # Themen-Beschreibungen in show-descriptions.csv (z. B. „Roots: Americana“).
@@ -41,14 +41,14 @@ ROTATIONS = {
 }
 TAGLINE = "Tune in and follow the pulse on Thinking Frequencies"
 POST_HINT = False   # True = Vorschlag, den Block auf X zu posten (mit Tagline); derzeit aus
-REGAL_HINT = False  # True = pro Sendung 3 Titel aus dem Plattenregal vorschlagen (länger nicht gelaufen); erst nach Arrlys Okay
+REGAL_HINT = False  # True = pro Sendung 3 Titel aus dem Plattenregal vorschlagen (länger nicht gelaufen); erst nach Okay
 REGAL_COUNT = 3
 REGAL_FREE_HOURS = 48
 # Tauschideen statt ganzer Plan (seit 29.10.): Der DJ wiederholt offenbar täglich denselben
 # 24-h-Ablauf. Die Mail nennt nur die Stunden, in denen unser Plan von dem abweicht, was er
 # zuletzt zur selben Stunde gesendet hat (blocks.csv im Plattenregal). Nichts abweichend → keine Mail.
 DIFF_MODE = True
-# Fixpunkt-Mail (seit 31.10., Arrlys Entscheidung): Der DJ erfindet eigene Sendungen – die Mail lobt das
+# Fixpunkt-Mail (seit 31.10.): Der DJ erfindet eigene Sendungen – die Mail lobt das
 # (nennt seine neuen Namen der letzten 24 h), nennt nur den täglichen Hörer-Fixpunkt um 10am PT
 # und Specials der nächsten 2 Tage. Keine Tauschideen mehr. Alles andere bleibt ihm.
 ANCHOR_MODE = True
@@ -480,7 +480,7 @@ def main():
     print(subject, "\n\n", body, sep="")
     if os.environ.get("DRY_RUN") != "1":
         msg = EmailMessage()
-        msg["From"] = f"{SIGNATURE} <{os.environ['SMTP_USER']}>"
+        msg["From"] = f"{SIGNATURE} <{os.environ['SMTP_USER']}>" if SIGNATURE else os.environ["SMTP_USER"]
         msg["To"] = os.environ["MAIL_TO"]
         msg["Subject"] = subject
         msg.set_content(body)
