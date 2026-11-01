@@ -472,7 +472,8 @@ def main():
 
     if body is None:
         print(f"{key}: Sein Ablauf passt schon zum Plan – keine Mail nötig.")
-        NEXT_POST.write_text(post + "\n", encoding="utf-8")
+        if not ANCHOR_MODE:
+            NEXT_POST.write_text(post + "\n", encoding="utf-8")
         remember(key)
         return 0
 
@@ -488,7 +489,8 @@ def main():
             s.send_message(msg)
         print("Mail verschickt an", os.environ["MAIL_TO"])
 
-    NEXT_POST.write_text(post + "\n", encoding="utf-8")
+    if not ANCHOR_MODE:   # seit 2.11.: der Mailtext wird NICHT mehr öffentlich ins Repo geschrieben
+        NEXT_POST.write_text(post + "\n", encoding="utf-8")
     remember(key)
     return 0
 
