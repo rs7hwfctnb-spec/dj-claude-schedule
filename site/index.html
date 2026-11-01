@@ -241,9 +241,9 @@ function mainOf(t) { const n = noteFor(t); return MAIN.includes(n.genre) ? n.gen
 // „Passt zu“ zeigt nur noch, was lebt: die Fixpunkte (10am PT), Specials und Art-House. Alte Sendungsnamen bleiben in der Datei.
 const LIVE_FITS = new Set(["The Reverb Hour", "Soul Soup", "Jam Session", "TripHop", "Sunday Classics", "Classic", "Haunted Hour", "In Full Swing", "Art-House"]);
 const isLive = s => LIVE_FITS.has(s) || (/^(Roots|Europe Express): /.test(s) && !/Change$/.test(s));
-// Apple-„Classical“ → Classic nur, wenn du dem Titel noch keine eigene Playlist gegeben hast (deine Einordnung gewinnt)
-function fitsOf(t) { const n = noteFor(t), f = split(n.fits_show); const a = split(n.lists).length ? null : AUTO[genreOf(t)]; if (a && !f.includes(a)) f.push(a); return f; }
-function listsOf(t) { const n = noteFor(t), l = split(n.lists); const a = l.length ? null : AUTO[genreOf(t)]; if (a && !l.includes(a)) l.push(a); return l; }
+// Apple-„Classical“ → Classic nur, wenn der Titel keine eigene Playlist hat UND sein Hauptgenre Klassik ist (z. B. nicht Luciers Klangkunst)
+function fitsOf(t) { const n = noteFor(t), f = split(n.fits_show); const a = split(n.lists).length || mainOf(t) !== "Classical / Neo-Classical" ? null : AUTO[genreOf(t)]; if (a && !f.includes(a)) f.push(a); return f; }
+function listsOf(t) { const n = noteFor(t), l = split(n.lists); const a = l.length || mainOf(t) !== "Classical / Neo-Classical" ? null : AUTO[genreOf(t)]; if (a && !l.includes(a)) l.push(a); return l; }
 const EMPTY = { fits_show: "", film: "", note: "", lists: "", style: "", genre: "", country: "" };
 
 function loadPending() { try { pending = JSON.parse(localStorage.getItem(LS) || "{}"); } catch (e) { pending = {}; } }
