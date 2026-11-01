@@ -26,6 +26,8 @@ UA = {"User-Agent": "TF-Schedule listener tool (github.com/TF-Schedule/dj-claude
 
 PLAYS = DATA / "plays.csv"
 BLOCKS = DATA / "blocks.csv"
+STATS = DATA / "stats.csv"        # Zahlen aller Andon-Stationen, alle 15 Min. (seit 1.11.2026, für die Sprechanteil-Beobachtung)
+STATS_COLS = ["utc", "station", "talk_pct", "current_listeners", "total_listeners", "avg_duration_s", "popularity"]
 TRACKS = DATA / "tracks.csv"
 CACHE = DATA / "genre_cache.json"
 NOTES = DATA / "notes.csv"
@@ -65,6 +67,18 @@ def write_csv(path, cols, rows):
 
 def unesc(s):
     return json.loads('"' + s + '"')
+
+
+def andon_stats(html):
+    """Je Station: Sprechanteil (Talking %), Hörer jetzt/gesamt, Ø Hördauer, Popularität, Kontostand – aus dem Seitencode."""
+    out = []
+    for m in re.finditer(r'name:"((?:[^"\\]|\\.)*)"[^{}]{0,1500}?balance:([\d.]+),twitterUsername:"([^"]*)"[^{}]*?stats:\{([^}]*)\},contentStats:\{categoryBreakdown:\[([^\]]*)\]', html):
+        st = dict(re.findall(r'(\w+):([\d.]+)', m.group(4)))
+        talk = re.search(r'category:"Talking",percentage:([\d.]+)', m.group(5))
+        out.append({"station": unesc(m.group(1)), "talk_pct": talk.group(1) if talk else "",
+                    "current_listeners": st.get("currentListeners", ""), "total_listeners": st.get("totalListeners", ""),
+                    "avg_duration_s": st.get("avgDurationSeconds", ""), "popularity": st.get("popularity", "")})
+    return out
 
 
 def andon_blocks():
@@ -214,6 +228,18 @@ def main():
         print("Andon-Seite nicht lesbar:", e)
     blocks.sort(key=lambda b: b["start_utc"])
     write_csv(BLOCKS, BLOCK_COLS, blocks)
+
+    # 1b) Zahlen aller Stationen (Sprechanteil, Hörer) – nur anhängen
+    try:
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        rows = [{"utc": now, **r} for r in andon_stats(get(ANDON))]
+        if rows:
+            stats = read_csv(STATS, STATS_COLS) + rows
+            write_csv(STATS, STATS_COLS, stats)
+        else:
+            print("Andon-Zahlen nicht gefunden (Seitenaufbau geändert?)")
+    except Exception as e:
+        print("Andon-Zahlen nicht lesbar:", e)
 
     def show_at(ts):
         s = ""
